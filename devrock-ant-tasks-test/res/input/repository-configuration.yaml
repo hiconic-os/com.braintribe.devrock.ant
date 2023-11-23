@@ -1,0 +1,36 @@
+!com.braintribe.devrock.model.repository.RepositoryConfiguration {
+  cachePath: "${env.config.base}/repo",
+  offline: false,
+
+  # the repo for local installation (e.g. via ant)
+  installRepository: &install-repo !com.braintribe.devrock.model.repository.MavenFileSystemRepository {
+    name: "install",
+    rootPath: "${env.config.base}/inst",
+    dominanceFilter: !com.braintribe.devrock.model.repository.filters.AllMatchingArtifactFilter {},
+ 	cachable: false,
+  },
+
+  # the list of repos for resolving  
+  repositories: [
+    # the install-repo must be first to override other repos (combined with dominance filter)
+    *install-repo,
+    !com.braintribe.devrock.model.repository.MavenHttpRepository {
+      name: "third-party", 
+      url: "https://artifactory.braintribe.com/artifactory/third-party/", 
+      user: "${env.my-btart-user}",
+      password: "${env.my-btart-pwd}",
+    },
+    !com.braintribe.devrock.model.repository.MavenHttpRepository {
+      name: "core-dev", 
+      url: "https://artifactory.braintribe.com/artifactory/core-dev/", 
+      user: "${env.my-btart-user}",
+      password: "${env.my-btart-pwd}",
+    },
+    !com.braintribe.devrock.model.repository.MavenHttpRepository {
+      name: "devrock", 
+      url: "https://artifactory.braintribe.com/artifactory/devrock/", 
+      user: "${env.my-btart-user}",
+      password: "${env.my-btart-pwd}",
+    },
+  ]
+}

@@ -1,0 +1,1 @@
+com.braintribe.devrock.test:x#1.0.1

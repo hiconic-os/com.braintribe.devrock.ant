@@ -1,0 +1,78 @@
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+--><project xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+
+	<target name="clean">
+		<delete dir="dist"/>
+	</target>
+
+	<!-- creates the tomcat-runtime asset zip by merging runtime-original and runtime-modifications. -->
+	<target name="dist" depends="clean">
+		<delete dir="dist"/>
+		<mkdir dir="dist"/>
+
+		<local name="runtimeDir"/>
+		<property name="runtimeDir" value="dist/runtime" />
+
+		<!-- first copy the original runtime, which is almost the unmodified Tomcat archive
+			(except a few removed folders, see README.md). -->
+		<copy todir="${runtimeDir}">
+			<fileset dir="runtime-original"/>
+		</copy>
+		<!-- afterwards copy the modifications. This overwrites some files from original runtime. -->
+		<copy todir="${runtimeDir}" overwrite="true">
+			<fileset dir="runtime-modifications/custom"/>
+		</copy>
+		<copy todir="${runtimeDir}" overwrite="true">
+			<fileset dir="runtime-modifications/custom-auto-maintained"/>
+		</copy>
+
+		<!-- for each file in runtime/_projection/ remove the respective file in runtime/, if it exists. -->
+		<!-- example: for runtime/_projection/host/bin/catalina.sh.vm we remove runtime/host/bin/catalina.sh
+			since it will be created from the template when processed by Jinni. -->
+		<foreach target="deleteFileFromRuntime" param="projectionFilePath">
+			<path>
+				<fileset dir="${runtimeDir}/_projection" casesensitive="yes" includes="**/*.*" />
+			</path>
+		</foreach>
+
+		<zip destfile="dist/runtime.zip">
+			<fileset dir="${runtimeDir}" excludes="**/.gitignore"/>
+		</zip>
+	</target>
+
+	<!-- deletes a file in the runtime for which a template in _projection folder exists. example:
+		For projectionFilePath /tmp/tribefire.cortex.assets/tomcat-runtime/dist/runtime/_projection/host/bin/catalina.sh.vm
+		the originalFilePath /tmp/tribefire.cortex.assets/tomcat-runtime/dist/runtime/host/bin/catalina.sh will be removed.
+ -->
+	<target name="deleteFileFromRuntime">
+		<propertyregex property="originalFilePath"
+			input="${projectionFilePath}"
+			regexp="^(.*)/_projection/(.*)\.vm"
+			select="\1/\2"
+			casesensitive="true" />
+		<if>
+			<available file="${originalFilePath}"/>
+			<then>
+				<delete file="${originalFilePath}"/>
+			</then>
+			<else>
+				<echo message="Won't delete ${originalFilePath} since it does not exist. This is expected."/>
+			</else>
+		</if>
+	</target>
+
+	<target name="install" depends="dist">
+		<bt:install file="pom.xml">
+			<pom file="pom.xml" id="project"/>
+			<attach file="asset.man" type="asset:man"/>
+			<attach file="dist/runtime.zip" type="runtime:zip"/>
+		</bt:install>
+	</target>
+</project>

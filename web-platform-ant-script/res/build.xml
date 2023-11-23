@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dist">
+		<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+
+		<target name="dist" depends="dist-main">
+			<zip basedir="context" destfile="${dist}/${versionedName}-context.zip"/>
+		</target>
+</project>

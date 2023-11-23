@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="repository-view-ant-script">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<!-- TODO: experimental option; not sure yet what the default should be and whether this option should exist at all. -->
+	<property name="ensureViewDependencies" value="false"/>
+
+	<target name="download-deps" depends="init">
+		<if>
+			<istrue value="${ensureViewDependencies}"/>
+			<then>
+				<!-- Make sure that all view dependencies are available. -->
+				<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" sourcesFilesetId="compile.sources.fileset" useScope="compile">
+					<pom refid="pom.project" />
+				</bt:dependencies>
+			</then>
+		</if>
+	</target>
+
+	<target name="install" depends="download-deps">
+		<bt:install file="pom.xml">
+			<pom file="pom.xml" id="project"/>
+			<attach file="repositoryview.yaml" type="repositoryview:yaml"/>
+		</bt:install>
+	</target>
+
+</project>

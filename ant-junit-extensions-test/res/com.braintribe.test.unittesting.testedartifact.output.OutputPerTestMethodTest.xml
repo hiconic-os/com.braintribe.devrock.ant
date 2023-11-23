@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="1" failures="1" hostname="vie-nb-mla" name="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" skipped="0" tests="9" time="0.078" timestamp="2016-10-06T16:34:12">
+  <properties>
+    <property name="unittests.artifact.fullyQualifiedName" value="com.braintribe.test.unittesting:TestedArtifactTest#1.0" />
+  </properties>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test1" time="0.002" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test2" time="0.001" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test3" time="0.0" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test4" time="0.0" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test5" time="0.0" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test6" time="0.001">
+    <error message="dummy exception" type="java.lang.RuntimeException">java.lang.RuntimeException: dummy exception
+	at com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest.test6(OutputPerTestMethodTest.java:58)
+</error>
+  </testcase>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test7" time="0.0" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test8" time="0.001">
+    <failure message="dummy assertion" type="junit.framework.AssertionFailedError">junit.framework.AssertionFailedError: dummy assertion
+	at com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest.test8(OutputPerTestMethodTest.java:69)
+</failure>
+  </testcase>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest" name="test9" time="0.0" />
+  <system-out><![CDATA[
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test1 startTest SysOut ] ***
+Output from test method 'test1' written to System.out.
+Another output from test method 'test1' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test1 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test2 startTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test2 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test3 startTest SysOut ] ***
+Output from test method 'test3' written to System.out.
+Another output from test method 'test3' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test3 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test4 startTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test4 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test5 startTest SysOut ] ***
+Output from test method 'test5' written to System.out.
+Another output from test method 'test5' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test5 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test6 startTest SysOut ] ***
+Output from test method 'test6' written to System.out.
+Another output from test method 'test6' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test6 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test7 startTest SysOut ] ***
+Output from test method 'test7' written to System.out.
+Another output from test method 'test7' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test7 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test8 startTest SysOut ] ***
+Output from test method 'test8' written to System.out.
+Another output from test method 'test8' written to System.out.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test8 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test9 startTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test9 endTest SysOut ] ***
+]]></system-out>
+  <system-err><![CDATA[
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test1 startTest SysErr ] ***
+Output from test method 'test1' written to System.err.
+Another output from test method 'test1' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test1 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test2 startTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test2 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test3 startTest SysErr ] ***
+Output from test method 'test3' written to System.err.
+Another output from test method 'test3' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test3 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test4 startTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test4 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test5 startTest SysErr ] ***
+Output from test method 'test5' written to System.err.
+Another output from test method 'test5' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test5 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test6 startTest SysErr ] ***
+Output from test method 'test6' written to System.err.
+Another output from test method 'test6' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test6 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test7 startTest SysErr ] ***
+Output from test method 'test7' written to System.err.
+Another output from test method 'test7' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test7 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test8 startTest SysErr ] ***
+Output from test method 'test8' written to System.err.
+Another output from test method 'test8' written to System.err.
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test8 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test9 startTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputPerTestMethodTest/test9 endTest SysErr ] ***
+]]></system-err>
+</testsuite>

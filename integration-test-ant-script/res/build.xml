@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="integration-test-ant-script" default="dist" basedir=".">
+	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+	<!-- ********************************* Fixed Paths *************************************************** -->
+	<property name="integrationtests.artifact.rootDir" location="${basedir}"/>
+		<!-- 30 minutes -->
+	<property name="integrationtests.timeout" value="1800000"/>
+
+	<property name="integrationtests.timestampPattern" value="yyyy-MM-dd HH:mm:ss.SSS" />
+
+	<property name="integrationtests.loggingProperties"><![CDATA[
+###############################################################################
+####### Logging properties file for Java Util Logging + BT Extensions #########
+###############################################################################
+# Prints to System.out at INFO log level.
+###############################################################################
+
+## Handlers ##
+handlers = com.braintribe.logging.juli.handlers.ConsoleHandler
+
+# ConsoleHandler
+com.braintribe.logging.juli.handlers.ConsoleHandler.level = INFO
+com.braintribe.logging.juli.handlers.ConsoleHandler.formatter = com.braintribe.logging.juli.formatters.simple.SimpleFormatter
+
+## Formatters ##
+# more detailed log messages: Timestamp + Level + LoggerName (=Class Name) + Message + Exception (if available)
+com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL %4$-7s %3$-75s '%5$s'%6$s [%9$s]%n
+
+## Log Levels ##
+.level = INFO
+]]></property>
+	<property name="integrationtests.loggingPropertiesFile" location="${java.io.tmpdir}/integrationtests.systemout_info_logging.properties"/>
+
+	<property name="integrationtests.reports.prefix" value=""/>
+	<!-- The XML output format. -->
+	<property name="integrationtests.outputFormat" value="standard"/>
+
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+
+	<target name="test" depends="init">
+
+		<!-- *** Check that sources are available and that artifact has been built. *** -->
+		<property name="integrationtests.artifact.sourcesDir" location="${integrationtests.artifact.rootDir}/src"/>
+		<property name="integrationtests.artifact.compiledClassesDir" location="${integrationtests.artifact.rootDir}/build"/>
+		<property name="integrationtests.artifact.reportsDir" location="${integrationtests.artifact.rootDir}/dist/testReports"/>
+		<property name="integrationtests.excludedCategories" value=""/>
+		<property name="integrationtests.testClasses.includeRegex" value=".*"/>
+		<property name="integrationtests.testClasses.excludeRegex" value=""/>
+		<property name="integrationtests.haltOnFailure" value="false" />
+		<property name="integrationtests.showoutput" value="false" />
+
+		<delete dir="${integrationtests.artifact.reportsDir}"/>
+		<mkdir dir="${integrationtests.artifact.reportsDir}"/>
+
+		<!-- On linux max file name length is usually 255. On Windows it's 255 too, but the full path length is also relevant (maximum is 260, but including drive letter prefix, so we just use 255 again). -->
+		<if>
+			<os family="windows"/>
+			<then>
+				<length string="${integrationtests.artifact.reportsDir}" property="integrationtests.artifact.reportsDirPathLength" />
+				<!-- 255 - 4 (.xml) - reports dir path length - 1 (/ after reports dir) -->
+				<math result="integrationtests.artifact.maxReportFileKeyLength" operand1="250" operation="-" operand2="${integrationtests.artifact.reportsDirPathLength}" datatype="int"/>
+			</then>
+			<else>
+				<!-- 255 - 4 (.xml) -->
+				<property name="integrationtests.artifact.maxReportFileKeyLength" value="251"/>
+			</else>
+		</if>
+
+		<fail message="Expected sources dir ${integrationtests.artifact.sourcesDir} doesn't exist!">
+			<condition>
+				<not>
+					<available file="${integrationtests.artifact.sourcesDir}" type="dir"/>
+				</not>
+			</condition>
+		</fail>
+
+		<fail message="Expected compiled classes dir ${integrationtests.artifact.compiledClassesDir} doesn't exist!">
+			<condition>
+				<not>
+					<available file="${integrationtests.artifact.compiledClassesDir}" type="dir"/>
+				</not>
+			</condition>
+		</fail>
+
+		<tstamp>
+			<format property="integrationtests.timestampBeforeGettingTestDependencies" pattern="${integrationtests.timestampPattern}" />
+		</tstamp>
+		<echo message="Time before getting test dependencies: ${integrationtests.timestampBeforeGettingTestDependencies}"/>
+
+		<bt:dependencies pathId="integrationtests.artifact.dependencies.path" filesetId="integrationtests.artifact.dependencies.fileset.NOT_USED" useScope="runtime">
+			<pom refid="pom.project" />
+		</bt:dependencies>
+
+		<tstamp>
+			<format property="integrationtests.timestampAfterGettingTestDependencies" pattern="${integrationtests.timestampPattern}" />
+		</tstamp>
+		<echo message="Time after getting test dependencies: ${integrationtests.timestampAfterGettingTestDependencies}"/>
+
+		<pathconvert pathsep="," property="path" refid="integrationtests.artifact.dependencies.path"/>
+
+		<!-- Get tests classpath (this includes all dependencies, also JUnit, but not Ant JUnit libs). -->
+		<path id="integrationtests.testsClasspath">
+			<path refid="integrationtests.artifact.dependencies.path"/>
+			<pathelement location="${integrationtests.artifact.compiledClassesDir}"/>
+		</path>
+		<pathconvert property="integrationtests.testsClasspathAsString" refid="integrationtests.testsClasspath"/>
+
+		<if>
+			<not><isset property="ant.custom.library.dir"/></not>
+			<then>
+				<property name="ant.custom.library.dir" value="${ant.library.dir}"/>
+			</then>
+		</if>
+
+		<!-- Get tests execution classpath (this also includes Ant JUnit libs + custom extensions). -->
+		<path id="integrationtests.testsExecutionClasspath">
+			<!-- first we add our tests classpath (derived from pom) ... -->
+			<path refid="integrationtests.testsClasspath"/>
+			<!-- ... and then we add some additional libs which are needed for JUnit execution from Ant and logging. -->
+			<path id="unittest.extensions.libs">
+				<fileset dir="${ant.custom.library.dir}" includes="bt.ant-junit-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-jul-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-ndc-*.jar" />
+			</path>
+			<pathelement location="${ant.library.dir}/ant.jar"/>
+			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
+			<pathelement location="${ant.library.dir}/ant-junit4.jar"/>
+		</path>
+
+		<pathconvert property="integrationtests.testsExecutionClasspathAsString" refid="integrationtests.testsExecutionClasspath"/>
+
+		<!-- ********************* -->
+		<!-- In order to resolve the problem of a long classpath on command line on Windows, the classpath can be replaced by a
+			single jar file with an in-manifest Class-Path attribute whose value lists all the jar and zip files the class path should contain. -->
+		<if>
+			<length string="${integrationtests.testsExecutionClasspathAsString}" when="gt" length="1800"/>
+			<then>
+				<echo message="Execution classpath length is greater than the expected length. Creating manifest classpath ..."/>
+				<property name="integrationtests.testsExecutionClasspathManifestJarFile" location="${integrationtests.artifact.reportsDir}/manifest_classpath_helper.jar"/>
+				<manifestclasspath property="integrationtests.testsExecutionClasspathManifestClasspathProperty" jarfile="${integrationtests.testsExecutionClasspathManifestJarFile}"
+					maxParentLevels="100">
+					<classpath refid="integrationtests.testsExecutionClasspath"/>
+				</manifestclasspath>
+				<jar destfile="${integrationtests.testsExecutionClasspathManifestJarFile}">
+					<manifest>
+						<attribute name="Class-Path" value="${integrationtests.testsExecutionClasspathManifestClasspathProperty}"/>
+					</manifest>
+				</jar>
+				<path id="integrationtests.finalTestsExecutionClasspath">
+					<pathelement path="${integrationtests.testsExecutionClasspathManifestJarFile}"/>
+				</path>
+			</then>
+			<else>
+				<path id="integrationtests.finalTestsExecutionClasspath">
+					<path refId="integrationtests.testsExecutionClasspath"/>
+				</path>
+			</else>
+		</if>
+		<pathconvert property="integrationtests.finalTestsExecutionClasspathAsString" refid="integrationtests.finalTestsExecutionClasspath"/>
+		<!-- ********************* -->
+		<echo message="Junit Tests Settings: "/>
+		<echo message="  excluded test categories:        ${integrationtests.excludedCategories}"/>
+		<echo message="  test classes include regex:      ${integrationtests.testClasses.includeRegex}"/>
+		<echo message="  test classes exclude regex:      ${integrationtests.testClasses.excludeRegex}"/>
+		<echo message="  max report file key length:      ${integrationtests.artifact.maxReportFileKeyLength}"/>
+		<echo message="  logging.properties file:         ${integrationtests.loggingPropertiesFile}"/>
+		<echo message="  tests working directory:         ${integrationtests.artifact.rootDir}"/>
+		<echo message="  tests sources directory:         ${integrationtests.artifact.sourcesDir}"/>
+		<echo message="  tests classpath:                 ${integrationtests.testsClasspathAsString}"/>
+		<echo message="  tests execution classpath:       ${integrationtests.testsExecutionClasspathAsString}"/>
+		<echo message="  final tests execution classpath: ${integrationtests.finalTestsExecutionClasspathAsString}"/>
+		<echo message="  output format:                   ${integrationtests.outputFormat}"/>
+		<echo message="  reports directory:               ${integrationtests.artifact.reportsDir}"/>
+		<if>
+			<isset property="java.executable"/>
+			<then>
+				<echo message="  java executable:                 ${java.executable}"/>
+			</then>
+		</if>
+
+		<!-- *** Find test classes and (relevant) test methods. *** -->
+		<!-- Explanation: we could also just run a simple batchtest, but that would run ALL tests. We want to filter out some tests
+			though (e.g. tests that depend on a custom environment). One could filter tests using Ignore annotation, but then Eclipse
+			would ignore them too. The suggested approach is to use TestSuites. But then developers would have to define TestSuites
+			that only include the 'real' integration tests.
+			To keep it as simple as possible for developers, we instead search relevant test classes and methods using a custom task. -->
+		<bt:findJunitTests testsSrcDir="${integrationtests.artifact.sourcesDir}" testsClasspathString="${integrationtests.testsClasspathAsString}"
+			resultProperty="integrationtests.testClassesAndMethods" testClassesIncludeRegex="${integrationtests.testClasses.includeRegex}"
+			testClassesExcludeRegex="${integrationtests.testClasses.excludeRegex}" excludedCategories="${integrationtests.excludedCategories}"
+			verbose="true"/>
+
+		<if>
+			<equals arg1="${integrationtests.testClassesAndMethods}" arg2=""/>
+			<then>
+				<echo message="No tests found."/>
+			</then>
+			<else>
+				<!-- write logging.properties file -->
+				<echo message="${integrationtests.loggingProperties}" file="${integrationtests.loggingPropertiesFile}" append="false" encoding="UTF-8" />
+				<echo message="Found the following test classes and methods: ${integrationtests.testClassesAndMethods}"/>
+
+				<!-- *** Run integration tests *** -->
+				<echo message="Running tests and writing reports to ${integrationtests.artifact.reportsDir}."/>
+
+				<property name="integrationtests.jvmarg1" value="-Djava.util.logging.config.file=${integrationtests.loggingPropertiesFile}"/>
+				<property name="integrationtests.jvmarg2" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.propertiesIncludeRegex=integrationtests.artifact.fullyQualifiedName"/>
+				<property name="integrationtests.jvmarg3" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.sysoutMaxLengthForSuccess=20000"/>
+				<property name="integrationtests.jvmarg4" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.syserrMaxLengthForSuccess=50000"/>
+				<property name="integrationtests.jvmarg5" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.outputFormat=${integrationtests.outputFormat}"/>
+				<if>
+					<!-- Check if Java version is 8. -->
+					<or>
+						<!-- This could be improved by getting the Java version from the executable.
+							Without that the specified Java may not match the actual one in local environments.
+							Also we should actually check for 8 or lower. -->
+						<equals arg1="${pom.project.properties.java.version}" arg2="1.8"/>
+						<equals arg1="${pom.project.properties.java.version}" arg2="8"/>
+					</or>
+					<then>
+						<echo message="Not adding add-opens."/>
+						<property name="integrationtests.jvmarg6" value="-Ddummy.property=set-instead-of-add-opens"/>
+					</then>
+					<else>
+						<echo message="Adding add-opens."/>
+						<property name="integrationtests.jvmarg6" value="--add-opens=java.base/java.lang=ALL-UNNAMED"/>
+					</else>
+				</if>
+
+				<tstamp>
+					<format property="integrationtests.timestampBeforeRunningTests" pattern="${integrationtests.timestampPattern}" />
+				</tstamp>
+				<echo message="Time before running tests: ${integrationtests.timestampBeforeRunningTests}"/>
+
+				<!-- Only if java executable is specified we want to pass it as jvm parameter to the junit ant task.
+					The 'else' block is equal to the 'then' block except that 'jvm' parameter is removed.
+					(We tried to used presetdef, but it failed because of bt:btBatchTest nested element.)-->
+				<if>
+					<isset property="java.executable"/>
+					<then>
+						<echo message="Forking JVM to run tests with Java executable ${java.executable}."/>
+						<bt:junit jvm="${java.executable}" printsummary="false" fork="true" forkmode="once" includeantruntime="false" haltonfailure="${integrationtests.haltOnFailure}" failureproperty="integrationtests.errorOccurred"
+							showoutput="${integrationtests.showoutput}" maxmemory="4000m" filtertrace="true" logfailedtests="false" dir="${integrationtests.artifact.rootDir}" newenvironment="false" timeout="${integrationtests.timeout}">
+							<!--
+							<jvmarg value="-Xdebug"/>
+							<jvmarg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+							 -->
+							<jvmarg value="${integrationtests.jvmarg1}"/>
+							<jvmarg value="${integrationtests.jvmarg2}"/>
+							<jvmarg value="${integrationtests.jvmarg3}"/>
+							<jvmarg value="${integrationtests.jvmarg4}"/>
+							<jvmarg value="${integrationtests.jvmarg5}"/>
+							<jvmarg value="${integrationtests.jvmarg6}"/>
+
+							<syspropertyset>
+								<propertyref prefix="qa" />
+								<propertyref prefix="tribefire" />
+							</syspropertyset>
+
+							<!-- We pass the excluded categories also via environment, so that (custom) runners can also filter based on categories too. -->
+							<env key="TESTS_EXCLUDED_CATEGORIES" value="${integrationtests.excludedCategories}"/>
+							<!-- We don't actually need this variable, but we must make sure that (if set) it is not passed to the forked JVM.
+								That's because it might be something like:
+								LD_LIBRARY_PATH: /opt/java/jdk17/lib/server:/opt/java/jdk17/lib:/opt/java/jdk17/../lib
+								i.e. it might point to another JDK. -->
+							<env key="LD_LIBRARY_PATH" value="/NOT_USED"/>
+
+							<classpath>
+								<path refid="integrationtests.finalTestsExecutionClasspath"/>
+							</classpath>
+							<formatter classname="com.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter" extension=".xml"/>
+
+							<bt:btBatchTest todir="${integrationtests.artifact.reportsDir}" skipNonTests="true" classesAndMethods="${integrationtests.testClassesAndMethods}"
+								reportPrefix="${integrationtests.reports.prefix}" reportMaxLength="${integrationtests.artifact.maxReportFileKeyLength}" />
+						</bt:junit>
+					</then>
+					<else>
+						<bt:junit printsummary="false" fork="true" forkmode="once" includeantruntime="false" haltonfailure="${integrationtests.haltOnFailure}" failureproperty="integrationtests.errorOccurred"
+							showoutput="${integrationtests.showoutput}" maxmemory="4000m" filtertrace="true" logfailedtests="false" dir="${integrationtests.artifact.rootDir}" newenvironment="false" timeout="${integrationtests.timeout}">
+							<!--
+							<jvmarg value="-Xdebug"/>
+							<jvmarg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+							 -->
+							<jvmarg value="${integrationtests.jvmarg1}"/>
+							<jvmarg value="${integrationtests.jvmarg2}"/>
+							<jvmarg value="${integrationtests.jvmarg3}"/>
+							<jvmarg value="${integrationtests.jvmarg4}"/>
+							<jvmarg value="${integrationtests.jvmarg5}"/>
+							<jvmarg value="${integrationtests.jvmarg6}"/>
+
+							<syspropertyset>
+								<propertyref prefix="qa" />
+								<propertyref prefix="tribefire" />
+							</syspropertyset>
+
+							<!-- We pass the excluded categories also via environment, so that (custom) runners can filter based on categories too. -->
+							<env key="TESTS_EXCLUDED_CATEGORIES" value="${integrationtests.excludedCategories}"/>
+
+							<classpath>
+								<path refid="integrationtests.finalTestsExecutionClasspath"/>
+							</classpath>
+							<formatter classname="com.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter" extension=".xml"/>
+
+							<bt:btBatchTest todir="${integrationtests.artifact.reportsDir}" skipNonTests="true" classesAndMethods="${integrationtests.testClassesAndMethods}"
+								reportPrefix="${integrationtests.reports.prefix}" reportMaxLength="${integrationtests.artifact.maxReportFileKeyLength}" />
+						</bt:junit>
+					</else>
+				</if>
+
+				<tstamp>
+					<format property="integrationtests.timestampAfterRunningTests" pattern="${integrationtests.timestampPattern}" />
+				</tstamp>
+				<echo message="Time after running tests: ${integrationtests.timestampAfterRunningTests}"/>
+
+				<echo message="Done running tests."/>
+
+			</else>
+		</if>
+	</target>
+</project>

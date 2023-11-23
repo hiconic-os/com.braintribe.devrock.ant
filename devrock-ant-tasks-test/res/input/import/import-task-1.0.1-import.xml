@@ -1,0 +1,8 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="imported">
+	
+	<target name="imported">            	
+		<echo message="this is the imported task" file="imported.txt" />
+    </target>
+	
+</project>    	
+            

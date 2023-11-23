@@ -1,0 +1,7 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="pom">
+    <target name="pom">
+      <bt:pom file="pom.xml" id="pom.project"/>
+    	<echo message="${pom.project.groupId}:${pom.project.artifactId}#${pom.project.version}" file="versionedName.txt"/>    	
+    	<echo message="${pom.project.properties.propertyOne}:${pom.project.properties.propertyTwo}" file="properties.txt"/>
+	</target>
+</project>

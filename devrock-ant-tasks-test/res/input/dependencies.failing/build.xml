@@ -1,0 +1,20 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dependencies.failing.missing.dep">
+    
+	<target name="dependencies.failing.missing.dep">
+        <bt:dependencies pathId="classpath">
+            <pom file="valid.pom.xml"/>
+        </bt:dependencies>
+    	
+    	<pathconvert refid="classpath" property="classpath_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="classpath.txt" message="${classpath_dump}" />
+	</target>
+	
+	<target name="dependencies.failing.missing.parent">
+	        <bt:dependencies pathId="classpath">
+	            <pom file="missing.parent.invalid.pom.xml"/>
+	        </bt:dependencies>
+	    	
+	    	<pathconvert refid="classpath" property="classpath_dump" pathsep="${line.separator}" dirsep="/" />
+	    	<echo file="classpath.txt" message="${classpath_dump}" />
+		</target>
+</project>

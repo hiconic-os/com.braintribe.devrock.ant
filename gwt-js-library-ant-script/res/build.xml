@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2018 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="assemble obf" name="gwt-js-library-ant-script">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+    <property location="src" name="src"/>
+    <property location="build" name="build"/>
+    <property location="dist" name="dist"/>
+    <property location="${dist}/gwt-deploy" name="gwt-deploy"/>
+    <property location="${dist}/gwt-work" name="gwt-work"/>
+    <property location="war" name="packagingInfoDir"/>
+    <property location="context" name="context"/>
+    <property location="tmp" name="tmpDir"/>
+    <target name="init">
+    	<tstamp/>
+        <property environment="env."/>
+        <property name="maven.repo.local" value="${env.M2_REPO}"/>
+        <bt:pom file="pom.xml" id="maven.project"/>
+        <bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" sourcesFilesetId="compile.sources.fileset" useScope="compile">
+            <bt:pom refid="maven.project"/>
+        </bt:dependencies>
+
+        <property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
+        <property name="versionedName-runtime" value="${maven.project.artifactId}-${maven.project.version}-runtime"/>
+        <property name="versionedName-debug" value="${maven.project.artifactId}-${maven.project.version}-debug"/>
+        <!-- Artifact distributed for deployment should have this name -->
+        <property name="distributableName" value="tribefire-js"/>
+        <!-- Create the time stamp -->
+        <tstamp/>
+        <!-- Create the build directory structure used by compile -->
+        <!--<mkdir dir="${build}"/> -->
+
+        <!-- Current GWT version requires Java 8, therefore the respective environment variable has to be set.
+            Note that java executable property is called 'java4gwt.executable' (and not 'java.executable'),
+            because 'java.executable' is used in other scripts and may be set, e.g. by the CI. -->
+        <fail message="GWT build requires Java 8. Please set environment variable 'JAVA_8_HOME'.">
+            <condition>
+                <not>
+                    <isset property="env.JAVA_8_HOME"/>
+                </not>
+            </condition>
+        </fail>
+        <property name="java4gwt.executable" value="${env.JAVA_8_HOME}${file.separator}bin${file.separator}java" />
+    </target>
+   <!-- <target depends="init" name="download-deps">
+        <bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" sourcesFilesetId="compile.sources.fileset" useScope="compile">
+            <bt:pom refid="maven.project"/>
+        </bt:dependencies>
+    </target> -->
+    <!-- <target depends="download-deps" name="update-classpath">
+        <bt:update-classpath fileSetId="compile.fileset" sourceFileSetId="compile.sources.fileset" sourcesNeeded="true"/>
+    </target> -->
+    <target depends="init" name="create-packaging-info">
+        <mkdir dir="${packagingInfoDir}"/>
+        <bt:dependencies packagingFile="${packagingInfoDir}/packaging.xml" pathId="dummyPath" pomFile="pom.xml"/>
+    </target>
+
+    <target depends="init" description="compile the source" name="compile pretty">
+        <antcall target="clean-war"/>
+        <property environment="env"/>
+        <path id="gwt.compile.path">
+            <resources refid="compile.sources.fileset"/>
+            <resources refid="compile.fileset"/>
+            <pathelement location="${src}"/>
+        </path>
+        <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
+        <pathconvert pathsep="&#10;" property="rawCompilePath" refid="gwt.compile.path"/>
+        <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-dev-namespace" prepend="true" />
+        <echo file=".gwt-compile-classpath" message="${compilePath}"/>
+        <echo message="running gwt compiler with: ${java4gwt.executable}"/>
+        <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
+            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[1.0,1.1)" />
+        </bt:dependencies>
+        <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
+        <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
+            <!-- Uncomment for remote debugging -->
+            <!--
+            <arg value="-Xdebug" />
+            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y" />
+            -->
+            <arg value="-Xmx4096M"/>
+            <arg value="-cp"/>
+            <arg value="${classloader.classpath.string}"/>
+            <arg value="-Djava.system.class.loader=com.braintribe.utils.classloader.FileClassPathClassLoader"/>
+            <arg value="-Dcom.braintribe.classpath.file=.gwt-compile-classpath"/>
+            <arg value="com.google.gwt.dev.Compiler"/>
+            <arg value="-deploy"/>
+            <arg value="${gwt-deploy}"/>
+            <arg value="-style"/>
+            <arg value="PRETTY"/>
+            <arg value="-gen"/>
+            <arg value="GWT-GENERATED"/>
+            <arg value="-localWorkers"/>
+            <arg value="2"/>
+            <arg value="-draftCompile"/>
+            <arg value="-extra"/>
+            <arg value="${gwt-deploy}"/>
+            <arg value="com.braintribe.gwt.tribefirejs.TribefireJs"/>
+            <arg value="-generateJsInteropExports"/>
+            <arg value="-logLevel"/>
+            <arg value="ERROR"/>
+            <!-- We need to specify at least one env variable to make newenvironment attribute work. -->
+            <!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows) -->
+            <env key="TEMP" value="${gwt-work}"/>
+        </exec>
+        <!--<move file="war/grindlebone/grindlebone.nocache.js" tofile="war/grindlebone/gb.js"/>-->
+    </target>
+
+    <target depends="init" description="compile the source" name="compile obf">
+        <antcall target="clean-war"/>
+        <property environment="env"/>
+        <path id="gwt.compile.path">
+            <resources refid="compile.sources.fileset"/>
+            <resources refid="compile.fileset"/>
+            <pathelement location="${src}"/>
+        </path>
+        <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
+        <pathconvert pathsep="&#10;" property="rawCompilePath" refid="gwt.compile.path"/>
+        <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-dev-namespace" prepend="true" />
+        <echo file=".gwt-compile-classpath" message="${compilePath}"/>
+        <echo message="running gwt compiler with: ${java4gwt.executable}"/>
+        <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
+            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[1.0,1.1)" />
+        </bt:dependencies>
+        <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
+        <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
+            <!-- Uncomment for remote debugging -->
+            <!--
+            <arg value="-Xdebug" />
+            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y" />
+            -->
+            <arg value="-Xmx4096M"/>
+            <arg value="-cp"/>
+            <arg value="${classloader.classpath.string}"/>
+        	<!--arg value="-Dminimize=true"/-->
+            <arg value="-Djava.system.class.loader=com.braintribe.utils.classloader.FileClassPathClassLoader"/>
+            <arg value="-Dcom.braintribe.classpath.file=.gwt-compile-classpath"/>
+            <arg value="com.google.gwt.dev.Compiler"/>
+            <arg value="-deploy"/>
+            <arg value="${gwt-deploy}"/>
+            <arg value="-style"/>
+            <arg value="OBF"/>
+            <arg value="-gen"/>
+            <arg value="GWT-GENERATED"/>
+            <arg value="-localWorkers"/>
+            <arg value="2"/>
+            <arg value="-extra"/>
+            <arg value="${gwt-deploy}"/>
+            <arg value="com.braintribe.gwt.tribefirejs.TribefireJs"/>
+            <arg value="-generateJsInteropExports"/>
+            <arg value="-logLevel"/>
+            <arg value="ERROR"/>
+            <!-- We need to specify at least one env variable to make newenvironment attribute work. -->
+            <!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows) -->
+            <env key="TEMP" value="${gwt-work}"/>
+        </exec>
+        <!--<move file="war/grindlebone/grindlebone.nocache.js" tofile="war/grindlebone/gb.js"/>-->
+    </target>
+    <target depends="compile pretty" name="dist">
+        <bt:pom file="pom.xml" id="serverSupport.project"/>
+        <bt:dependencies useScope="runtime">
+            <pom refid="serverSupport.project"/>
+            <filesetTarget id="serverSupport.fileset" type=":war"/>
+        </bt:dependencies>
+        <!-- Delete lib folder to make sure we don't use any old libs. -->
+        <!--<delete dir="war/WEB-INF/lib"/>
+		<mkdir dir="war/WEB-INF/lib"/> -->
+        <!-- Extract to 'war' folder. This (also) copies jar files to war/WEB-INF/lib. -->
+        <!--
+		<unwar dest="war">
+			<resources refid="serverSupport.fileset"/>
+			<patternset>
+				<exclude name="WEB-INF/web.xml"/>
+			</patternset>
+		</unwar>
+
+		<fileset id="serverSupport.build.fileset" dir="war/WEB-INF/lib"/>
+		<pathconvert refid="serverSupport.build.fileset" property="serverSupport.build.path"/>
+
+		<exec executable="java" failonerror="true">
+			<arg value="-Xmx1024M"/>
+			<arg value="-cp"/>
+			<arg value="${serverSupport.build.path}"/>
+			<arg value="com.braintribe.build.gwt.symbol.SymbolTransformer"/>
+			<arg value="${gwt-deploy}/grindlebone"/>
+		</exec>
+
+		<property name="symbolMapsDist" value="war/WEB-INF/symbolMaps"/>
+		<mkdir dir="${symbolMapsDist}"/>
+		<copy file="${gwt-deploy}/grindlebone/symbolMaps/mergedSymbols" todir="${symbolMapsDist}"/> -->
+    </target>
+    <target depends="assemble obf, assemble pretty" name="assemble">
+        <!--
+        <unzip dest="${tmpDir}/tribefireJs-debug" src="${dist}/assembled/${versionedName-debug}.war"/>
+        <unzip dest="${tmpDir}/tribefireJs-runtime" src="${dist}/assembled/${versionedName-runtime}.war"/>
+        <property name="debugDir" value="${tmpDir}/tribefireJs-runtime/debug"/>
+        <mkdir dir="${debugDir}"/>
+        -->
+        <!--<copy file="${tmpDir}/tribefireJs-debug/tribefire.js" tofile="${debugDir}/tribefire.js"/>-->
+        <!-- <copy todir="${debugDir}/tfjs">
+			<fileset dir="${tmpDir}/tribefireJs-debug/tfjs" />
+		</copy> -->
+        <!--
+        <copy file="${dist}/assembled/${versionedName-debug}.zip" tofile="${tmpDir}/tribefireJs-runtime/${versionedName-debug}.zip"/>
+        <copy file="${dist}/assembled/${versionedName-runtime}.zip" tofile="${tmpDir}/tribefireJs-runtime/${versionedName-runtime}.zip"/>
+        <zip basedir="${tmpDir}/tribefireJs-runtime" destfile="${dist}/assembled/${versionedName-debug}.war"/>
+        <delete dir="${tmpDir}"/>
+        -->
+    </target>
+    <target depends="compile pretty" name="clean pretty">
+        <move file="war/tfjs/tfjs.nocache.js" tofile="war/tribefire.js"/>
+    	<replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
+    	<replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
+        <delete dir="war/tfjs"/>
+    </target>
+    <target depends="clean pretty" name="assemble pretty">
+        <mkdir dir="${dist}/assembled"/>
+        <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName}.js.zip</echo>
+        <!--
+        <property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
+        <property name="webLibLocation" value="${context}/WEB-INF/lib"/>
+        <war destfile="${dist}/assembled/${versionedName-debug}.war" webxml="${webXmlLocation}">
+            <lib dir="${webLibLocation}"/>
+            <fileset dir="war">
+                <exclude name="WEB-INF/web.xml"/>
+                <exclude name="**/.svn"/>
+                <exclude name="**/gwt-user.jar"/>
+                <exclude name="**/gwt-dev.jar"/>
+            </fileset>
+            <fileset file="${context}/index.jsp"/>
+        </war>-->
+        <zip destfile="${dist}/assembled/${versionedName}.js.zip">
+            <fileset dir="war">
+                <include name ="tribefire.js"/>
+            </fileset>
+        </zip>
+
+        <!--
+        <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName-debug}.zip</echo>
+        <zip basedir="war" destfile="${dist}/assembled/${versionedName-debug}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
+        -->
+       <!-- <delete file="war/tribefire.js"/> -->
+    </target>
+    <target depends="compile obf" name="clean obf">
+        <move file="war/tfjs/tfjs.nocache.js" tofile="war/tribefire.js"/>
+    	<replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
+    	<replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
+        <delete dir="war/tfjs"/>
+    </target>
+    <target depends="clean obf" name="assemble obf">
+        <mkdir dir="${dist}/assembled"/>
+        <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName}-min.js.zip</echo>
+        <!--
+        <property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
+        <property name="webLibLocation" value="${context}/WEB-INF/lib"/>
+        <war destfile="${dist}/assembled/${versionedName-runtime}.war" webxml="${webXmlLocation}">
+            <lib dir="${webLibLocation}"/>
+            <fileset dir="war">
+                <exclude name="WEB-INF/web.xml"/>
+                <exclude name="**/.svn"/>
+                <exclude name="**/gwt-user.jar"/>
+                <exclude name="**/gwt-dev.jar"/>
+            </fileset>
+            <fileset file="${context}/index.jsp"/>
+        </war>-->
+        <zip destfile="${dist}/assembled/${versionedName}-min.js.zip">
+            <fileset dir="war">
+                <include name ="tribefire.js"/>
+            </fileset>
+        </zip>
+        <!--
+        <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName-runtime}.zip</echo>
+        <zip basedir="war" destfile="${dist}/assembled/${versionedName-runtime}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
+        -->
+        <!-- <delete file="war/tribefire.js"/> -->
+    </target>
+    <target name="release">
+        <bt:release buildDir="."/>
+    </target>
+    <!--
+    <target depends="clean-war" description="clean up" name="clean">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+        <delete dir="${tmpDir}"/>
+    </target>
+	-->
+    <target description="clean up" name="clean-war">
+        <delete dir="${packagingInfoDir}/tfjs"/>
+    </target>
+    <target depends="assemble" description="install to local maven repository" name="install">
+        <copy file="dist/assembled/${versionedName}.js.zip" tofile="dist/assembled/${versionedName}.js.zip"/>
+        <bt:install>
+            <pom refid="maven.project"/>
+            <!-- primary part for the CoreWebContext asset -->
+            <attach file="dist/assembled/${versionedName}-min.js.zip" type="min:js.zip"/>
+
+            <!-- addtional parts -->
+            <attach file="dist/assembled/${versionedName}.js.zip" type=":js.zip"/>
+            <!-- TODO: Clarify if this can be deleted permanently
+            <attach file="dist/assembled/${versionedName-runtime}.zip" type="runtime:zip"/>
+            <attach file="dist/assembled/${versionedName-debug}.zip" type="debug:zip"/>
+            -->
+            <attach file="asset.man" type="asset:man"/>
+        </bt:install>
+    </target>
+	<!--
+	<target name="compile-generate" depends="assemble">
+	    <javac srcdir="src" destdir="bin" includeantruntime="false" classpathref="compile.classpath" />
+	</target>
+
+	<target name="jar-generate" depends="compile-generate">
+	    <jar destfile="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" basedir="bin">
+	    	<manifest>
+	    		<attribute name="Main-Class" value="com.braintribe.gwt.tribefirejs.client.generator.TribefireJsGenerator"/>
+	    	</manifest>
+	    </jar>
+	</target>
+
+	<target name="run-generate" depends="jar-generate">
+		<java jar="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" fork="true"></java>
+	</target> -->
+</project>

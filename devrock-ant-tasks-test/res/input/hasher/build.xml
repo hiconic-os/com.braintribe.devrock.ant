@@ -1,0 +1,11 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="solutionsHash">
+	<target name="solutionsHash">
+		<property name="knownHashes" value=""/>
+		
+		<bt:ensureRange input="${range}" outputProperty="ensuredRange" root="${basedir}" expand="true"/>		
+		<fail unless="ensuredRange"/>
+		
+		<bt:hasher range="${ensuredRange}" targetDirectory="${basedir}" knownHashes="${knownHashes}" />
+	</target>
+       
+</project>

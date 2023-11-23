@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2018 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+-->
+
+<project xmlns:bt="antlib:com.braintribe.build.ant.tasks" name="group-ant-script" default="transitive-build">
+
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+
+	<target name="find-build-set">
+		<!-- default range to . if not set from outside -->
+		<property name="range" value="."/>
+		<bt:ensureRange input="${range}" outputProperty="ensuredRange" root="${basedir}" expand="false" ignoreProperty="ignoreRange"/>
+
+		<property name="target" value="install"/>
+
+		<bt:pom id="parentPom" file="parent/pom.xml" />
+		<propertyregex property="version"
+			input="${parentPom.version}"
+			regexp="^(\d+)\.(\d+).+"
+			select="\1.\2"
+			casesensitive="true" />
+
+		<property name="groupId" value="${parentPom.groupId}"/>
+
+		<bt:buildSet id="buildSet"
+				buildRange="${ensuredRange}"
+				codebaseRoot="${basedir}"
+				codebasePattern="$${artifactId}"
+				groups="${groupId}#${version}"
+				defaultGroup="${groupId}"
+				defaultVersion="${version}"
+		/>
+		<echo message="${target}"/>
+	</target>
+
+	<target name="transitive-build" depends="find-build-set" if="ensuredRange">
+		<bt:transitive-build mode="individual" target="${target}" buildSetRefId="buildSet" ignore="${ignoreRange}"/>
+	</target>
+
+	<target name="solutionsHash">
+		<property name="knownHashes" value=""/>
+
+		<bt:ensureRange input="${range}" outputProperty="ensuredRange" root="${basedir}" expand="true"/>
+		<fail unless="ensuredRange"/>
+
+		<bt:hasher range="${ensuredRange}" ignoreRange="${ignoreRange}" targetDirectory="${basedir}" knownHashes="${knownHashes}"/>
+	</target>
+	
+	<target name="extractVersions">
+		<echo message="Extracting versions ..."/>
+		<echo message="  Ensure range '${range}' in base dir '${basedir}'."/>
+		<bt:ensureRange input="${range}" outputProperty="ensuredRange" root="${basedir}" expand="true"/>
+		<echo message="  Verify ensuredRange set."/>
+		<echo message="  ensuredRange=${ensuredRange}"/>
+		<fail unless="ensuredRange"/>
+		<echo message="  Extract Versions for range '${ensuredRange}' in base dir '${basedir}' to target file '${version.output.file}'."/>
+		<bt:extractVersions range="${ensuredRange}" targetDirectory="${basedir}" targetFileName="${version.output.file}"/>
+		<echo message="Successfully extracted versions."/>
+	</target>
+</project>

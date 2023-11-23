@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" default="update-classpath" basedir=".">
+
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+
+	<target name="init">
+		<bt:pom id="maven.project" file="pom.xml" />
+		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}" />
+	</target>
+
+	<target name="download-deps" depends="init">
+		<bt:dependencies filesetId="compile.fileset" type=":jar,sources:jar" useScope="compile">
+			<pom refid="maven.project" />
+		</bt:dependencies>
+	</target>
+
+	<target name="update-classpath" depends="download-deps">
+		<delete dir="lib" />
+		<copy todir="lib" flatten="true">
+			<resources refid="compile.fileset" />
+		</copy>
+
+		<fileset id="plugin-libs" dir="lib">
+			<exclude name="**/*-sources.jar" />
+		</fileset>
+		<property name="plugin-lib-root" value="${basedir}/lib" />
+
+		<!-- ################  -->
+		<!-- Write .classpath  -->
+		<!-- ################  -->
+
+		<echo>Preparing .classpath</echo>
+
+		<!-- 
+			Create content consisting of lines like
+				<classpathentry kind='lib' path='lib/some-artifact-1.0.jar' sourcepath='lib/some-artifact-1.0-sources.jar'/>
+		-->
+
+		<pathconvert property="jarsOneLineEach" refid="plugin-libs" dirsep="/" pathsep="${line.separator}">
+			<!--convert the paths from absolute to relative starting with "lib/" -->
+			<map from="${plugin-lib-root}" to="lib" />
+		</pathconvert>
+		<echo file="deps.tmp" append="false">${jarsOneLineEach}</echo>
+		<replaceregexp file="deps.tmp" flags="g" match="\.jar" replace=".jar'/>" />
+		<replaceregexp file="deps.tmp" flags="g" match="lib/" replace="&lt;classpathentry kind='lib' path='lib/" />
+		<!-- We just assume the sources.jar exists for every jar. If it does not, Eclipse ignores such an invalid entry anyway. -->
+		<replaceregexp file="deps.tmp" flags="g" match="(lib/.*)\.jar'" replace="\1.jar' sourcepath='\1-sources.jar'" />
+
+		<loadfile srcFile="deps.tmp" property="deps" />
+		<delete file="deps.tmp" />
+
+		<!-- Copy .classpath from res-dev and insert the content consisting of classpath entries there -->
+
+		<copy file="res-dev/.classpath" tofile=".classpath" overwrite="true" />
+		<property name="substitute" value="${deps}${line.separator}&lt;/classpath&gt;" />
+		<replaceregexp file=".classpath" match="&lt;/classpath&gt;" replace="${substitute}" />
+
+		<!-- ##########################  -->
+		<!-- Write META-INF/MANIFEST.MF  -->
+		<!-- ##########################  -->
+
+		<echo>Preparing WEB-INF/MANIFEST.MF</echo>
+
+		<if>
+			<!-- If MANIFEST already exists, we copy it to res-dev to store any changes unrelated to Bundle-ClassPath, otherwise we copy the file from res-dev -->
+			<available file="META-INF/MANIFEST.MF" />
+			<then>
+				<manifest file="META-INF/MANIFEST.MF" mode="update">
+					<attribute name="Bundle-ClassPath" value="." />
+				</manifest>
+				<copy file="META-INF/MANIFEST.MF" tofile="res-dev/MANIFEST.MF" overwrite="true" />
+			</then>
+			<else>
+				<copy file="res-dev/MANIFEST.MF" tofile="META-INF/MANIFEST.MF" overwrite="true" />
+			</else>
+		</if>
+
+		<pathconvert property="commaSeparatedJars" refid="plugin-libs" dirsep="/" pathsep=",">
+			<!--convert the paths from absolute to relative starting with "lib/" -->
+			<map from="${plugin-lib-root}" to="lib" />
+		</pathconvert>
+		<manifest file="META-INF/MANIFEST.MF" mode="update">
+			<attribute name="Bundle-ClassPath" value=".,${commaSeparatedJars}" />
+		</manifest>
+
+		<!-- ##########################  -->
+		<!-- Write build.properties  -->
+		<!-- ##########################  -->
+
+		<echo>Preparing build.properties</echo>
+
+		<copy file="res-dev/build.properties" tofile="build.properties" overwrite="true" />
+		<pathconvert property="jarsForBuildProperties" refid="plugin-libs" dirsep="/" pathsep=",\\\\${line.separator}               ">
+			<!--convert the paths from absolute to relative starting with "lib/" -->
+			<map from="${plugin-lib-root}" to="lib" />
+		</pathconvert>
+		<!-- Replace LIB_JARS string with the the one line per jar  -->
+		<replaceregexp file="build.properties" flags="gs" match="LIB_JARS" replace="${jarsForBuildProperties}" />
+	</target>
+</project>

@@ -1,0 +1,55 @@
+# definition for some build-range tests
+!com.braintribe.devrock.model.repolet.content.RepoletContent {
+artifacts: [
+
+    # terminal
+    { artifactId: "t", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},       
+       dependencies: [                
+          { artifactId: "x",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},           
+          { artifactId: "y",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},           
+       ],        
+       parent : { artifactId: "parent",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+    }, 
+
+    # a - first level child      
+   { artifactId: "a", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts:{":jar": null},       
+    }, 
+
+   # b - first level child
+    { artifactId: "b", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},       
+    }, 
+
+   # parent - just to be there
+    { artifactId: "parent", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts:{":jar": null},       
+       managedDependencies: [                        
+            { artifactId: "import",  groupId: "com.braintribe.devrock.test", version: "1.0.1", scope: "import"}, 
+       ],        
+    }, 
+
+   { artifactId: "x", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts:{":jar": null},       
+      dependencies: [                
+          { artifactId: "z",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},                     
+       ],        
+    }, 
+
+    { artifactId: "y", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts:{":jar": null},       
+      dependencies: [                
+          { artifactId: "z",  groupId: "com.braintribe.devrock.test", version: "1.0.2"},                     
+       ],        
+    }, 
+
+   # z - version 1.0.1
+    { artifactId: "z", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},       
+    }, 
+
+    # z - version 1.0.2
+    { artifactId: "z", groupId: "com.braintribe.devrock.test", version: "1.0.2", parts: {":jar": null},       
+    }, 
+
+    # import - version 1.0.1
+    { artifactId: "import", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},       
+    }, 
+
+  ]
+
+}

@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<antlib>
+	<!-- ### Types ### -->
+	<typedef name="buildSet" classname="com.braintribe.build.ant.types.BuildSet"/>
+	<typedef name="dependency" classname="com.braintribe.build.ant.types.Dependency"/>
+	<typedef name="launchParam" classname="com.braintribe.build.ant.types.LaunchParam"/>
+	<typedef name="attach" classname="com.braintribe.build.ant.types.AttachedResource"/>
+	<typedef name="authentication" classname="com.braintribe.build.ant.types.Authentication"/>
+	<typedef name="remoteRepository" classname="com.braintribe.build.ant.types.RemoteRepository"/>
+
+	<!-- ### Tasks ### -->
+	<!-- Tasks -->
+	<taskdef name="dependencies" classname="com.braintribe.build.ant.tasks.DependenciesTask"/>
+	<taskdef name="pom" classname="com.braintribe.build.ant.tasks.Pom"/>
+	<taskdef name="generate-artifact-reflection" classname="com.braintribe.build.ant.tasks.GenerateArtifactReflectionTask"/>
+	<taskdef name="generate-model-declaration" classname="com.braintribe.build.ant.tasks.GenerateModelDeclarationTask"/>
+	<taskdef name="transitive-build" classname="com.braintribe.build.ant.tasks.TransitiveBuild"/>
+
+	<taskdef name="exportSolutions" classname="com.braintribe.build.ant.tasks.SolutionExportTask"/>
+	<taskdef name="repositoryExtract" classname="com.braintribe.build.ant.tasks.RepositoryExtract"/>
+	<taskdef name="transitive-build" classname="com.braintribe.build.ant.tasks.TransitiveBuild"/>
+
+	<taskdef name="buildsetToString" classname="com.braintribe.build.ant.tasks.BuildSetToString"/>
+	<taskdef name="permutePath" classname="com.braintribe.build.ant.tasks.PermutePath"/>
+
+	<taskdef name="textCsvExport" classname="com.braintribe.build.ant.tasks.TextCsvExportTask"/>
+	<taskdef name="textCsvImport" classname="com.braintribe.build.ant.tasks.TextCsvImportTask"/>
+	<taskdef name="update-classpath" classname="com.braintribe.build.ant.tasks.UpdateEclipseClasspath"/>
+	<taskdef name="update-classpath.AC" classname="com.braintribe.build.ant.tasks.UpdateStaticAcClasspath"/>
+
+	<taskdef name="transformArtifactsString" classname="com.braintribe.build.ant.tasks.TransformArtifactsString" />
+	<taskdef name="extractArtifactsFromClasspathString" classname="com.braintribe.build.ant.tasks.ExtractArtifactsFromClasspathString" />
+	<taskdef name="pomGroupFilter" classname="com.braintribe.build.ant.tasks.PomGroupFilter" />
+	<taskdef name="regex" classname="com.braintribe.build.ant.tasks.RegexpReplace" />
+	<taskdef name="extractArtifactProperties" classname="com.braintribe.build.ant.tasks.ExtractArtifactProperties"/>
+
+	<taskdef name="validatePomFormat" classname="com.braintribe.build.ant.tasks.validation.PomFormatValidatingTask"/>
+	<taskdef name="validatePomContent" classname="com.braintribe.build.ant.tasks.validation.PomContentValidatingTask"/>
+
+	<taskdef name="changeVersion" classname="com.braintribe.build.ant.tasks.ChangeVersionTask"/>
+	<taskdef name="pushToGit" classname="com.braintribe.build.ant.tasks.PushToGitTask"/>
+
+	<taskdef name="install" classname="com.braintribe.build.ant.tasks.InstallTask"/>
+	<taskdef name="deploy" classname="com.braintribe.build.ant.tasks.DeployTask"/>
+	<taskdef name="publish" classname="com.braintribe.build.ant.tasks.PublishingTask"/>
+	<taskdef name="publish-direct" classname="com.braintribe.build.ant.tasks.DirectPublishingTask"/>
+ 	<taskdef name="ensureRange" classname="com.braintribe.build.ant.tasks.EnsureRange"/>
+ 	<taskdef name="extractVersions" classname="com.braintribe.build.ant.tasks.ExtractVersions"/>
+ 	<taskdef name="import" classname="com.braintribe.build.ant.tasks.ImportTask"/>
+ 	<taskdef name="artifact" classname="com.braintribe.build.ant.tasks.Artifact"/>
+ 	<taskdef name="removeSuffix" classname="com.braintribe.build.ant.tasks.RemoveSuffix"/>
+ 	<taskdef name="replace" classname="com.braintribe.build.ant.tasks.Replace"/>
+ 	<taskdef name="extractSolutionsFromSolutionListString" classname="com.braintribe.build.ant.tasks.ExtractSolutionsFromSolutionListString"/>
+	<taskdef name="resolve-dependency" classname="com.braintribe.build.ant.tasks.ResolverTask" />
+	<taskdef name="modelIndexer" classname="com.braintribe.build.ant.tasks.ModelIndexerTask"/>
+	<taskdef name="hasher" classname="com.braintribe.build.ant.tasks.SolutionHasher"/>
+	<taskdef name="getArtifactsRoot" classname="com.braintribe.build.ant.tasks.WorkingCopyRootForArtifact" />
+	<taskdef name="tfjs" classname="com.braintribe.build.ant.tasks.typescript.GenerateJsInteropTypeScriptTask"/>
+	<taskdef name="indexRes" classname="com.braintribe.build.ant.tasks.IndexResourcesTask"/>
+	<taskdef name="determineProcessingDataInsightFolder" classname="com.braintribe.build.ant.tasks.DetermineProcessingDataInsightFolder" />
+	
+	<!-- JUnit -->
+	<taskdef name="findJunitTests" classname="com.braintribe.build.ant.tasks.unittests.FindJUnitTestsTask" />
+	<taskdef name="junit" classname="com.braintribe.build.ant.tasks.unittests.BtJUnitTask" />
+	<typedef name="btBatchTest" classname="com.braintribe.build.ant.tasks.unittests.BtBatchTest" />
+
+</antlib>

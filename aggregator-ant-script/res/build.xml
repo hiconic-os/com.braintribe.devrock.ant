@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	default="dist" basedir=".">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+	
+    <target name="install">
+        <bt:install>
+            <pom file="pom.xml" id="project"/>
+            <attach file="asset.man" type="asset:man"/>
+        </bt:install>
+    </target>
+
+</project>

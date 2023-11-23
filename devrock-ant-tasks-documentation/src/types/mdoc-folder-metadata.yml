@@ -1,0 +1,8 @@
+!com.braintribe.doc.meta.CustomFolderMetaData
+files:
+  authentication.md:
+    displayTitle: "Type: authentication"
+  filesettarget.md:
+    displayTitle: "Type: file set target"
+  remote.repository.md:
+    displayTitle: "Type: remote repository"

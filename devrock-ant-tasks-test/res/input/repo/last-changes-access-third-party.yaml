@@ -1,0 +1,9 @@
+!pooled
+
+value: *0
+
+pool:
+
+- &0 !com.braintribe.model.artifact.changes.ArtifactChanges
+ lastSynchronization: 2023-06-21T15:54:41.027Z
+ repositoryUrl: "https://artifactory.braintribe.com/artifactory/third-party/"

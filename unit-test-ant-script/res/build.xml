@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	xmlns:jacoco="antlib:org.jacoco.ant" name="unit-test-ant-script" default="dist" basedir=".">
+	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+	<!-- ********************************* Fixed Paths *************************************************** -->
+	<property name="unittests.artifact.rootDir" location="${basedir}"/>
+	<!-- 30 minutes -->
+	<property name="unittests.timeout" value="1800000"/>
+
+	<property name="unittests.timestampPattern" value="yyyy-MM-dd HH:mm:ss.SSS" />
+
+	<property name="unittests.loggingProperties"><![CDATA[
+###############################################################################
+####### Logging properties file for Java Util Logging + BT Extensions #########
+###############################################################################
+# Prints to System.out at INFO log level.
+###############################################################################
+
+## Handlers ##
+handlers = com.braintribe.logging.juli.handlers.ConsoleHandler
+
+# ConsoleHandler
+com.braintribe.logging.juli.handlers.ConsoleHandler.level = INFO
+com.braintribe.logging.juli.handlers.ConsoleHandler.formatter = com.braintribe.logging.juli.formatters.simple.SimpleFormatter
+
+## Formatters ##
+# more detailed log messages: Timestamp + Level + LoggerName (=Class Name) + Message + Exception (if available)
+com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL %4$-7s %3$-75s '%5$s'%6$s [%9$s]%n
+
+## Log Levels ##
+.level = INFO
+]]></property>
+	<property name="unittests.loggingPropertiesFile" location="${java.io.tmpdir}/unittests.systemout_info_logging.properties"/>
+
+	<property name="unittests.reports.prefix" value=""/>
+	<!-- The XML output format. -->
+	<property name="unittests.outputFormat" value="standard"/>
+
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" onerror="ignore"/>
+
+	<target name="test" depends="init">
+
+		<!-- *** Check that sources are available and that artifact has been built. *** -->
+		<property name="unittests.artifact.sourcesDir" location="${unittests.artifact.rootDir}/src"/>
+		<property name="unittests.artifact.compiledClassesDir" location="${unittests.artifact.rootDir}/build"/>
+		<property name="unittests.artifact.reportsDir" location="${unittests.artifact.rootDir}/dist/testReports"/>
+		<property name="unittests.artifact.coverageReportsDir" location="${unittests.artifact.reportsDir}/coverage"/>
+		<property name="unittests.excludedCategories" value=""/>
+		<property name="unittests.testClasses.includeRegex" value=".*"/>
+		<property name="unittests.testClasses.excludeRegex" value=""/>
+		<property name="unittests.measureTestCoverage" value="false" />
+		<property name="unittests.haltOnFailure" value="false" />
+		<property name="unittests.showoutput" value="false" />
+
+		<delete dir="${unittests.artifact.reportsDir}"/>
+		<mkdir dir="${unittests.artifact.reportsDir}"/>
+
+		<!-- On linux max file name length is usually 255. On Windows it's 255 too, but the full path length is also relevant (maximum is 260, but including drive letter prefix, so we just use 255 again). -->
+		<if>
+			<os family="windows"/>
+			<then>
+				<length string="${unittests.artifact.reportsDir}" property="unittests.artifact.reportsDirPathLength" />
+				<!-- 255 - 4 (.xml) - reports dir path length - 1 (/ after reports dir) -->
+				<math result="unittests.artifact.maxReportFileKeyLength" operand1="250" operation="-" operand2="${unittests.artifact.reportsDirPathLength}" datatype="int"/>
+			</then>
+			<else>
+				<!-- 255 - 4 (.xml) -->
+				<property name="unittests.artifact.maxReportFileKeyLength" value="251"/>
+			</else>
+		</if>
+
+		<fail message="Expected sources dir ${unittests.artifact.sourcesDir} doesn't exist!">
+			<condition>
+				<not>
+					<available file="${unittests.artifact.sourcesDir}" type="dir"/>
+				</not>
+			</condition>
+		</fail>
+
+		<fail message="Expected compiled classes dir ${unittests.artifact.compiledClassesDir} doesn't exist!">
+			<condition>
+				<not>
+					<available file="${unittests.artifact.compiledClassesDir}" type="dir"/>
+				</not>
+			</condition>
+		</fail>
+
+		<tstamp>
+			<format property="unittests.timestampBeforeGettingTestDependencies" pattern="${unittests.timestampPattern}" />
+		</tstamp>
+		<echo message="Time before getting test dependencies: ${unittests.timestampBeforeGettingTestDependencies}"/>
+
+		<bt:dependencies pathId="unittests.artifact.dependencies.path" filesetId="unittests.artifact.dependencies.fileset.NOT_USED" useScope="runtime"
+			solutionListStringProperty="unittests.artifact.solutionsAsString" localRepositoryProperty="unittests.localRepository">
+			<pom refid="pom.project" />
+		</bt:dependencies>
+
+		<tstamp>
+			<format property="unittests.timestampAfterGettingTestDependencies" pattern="${unittests.timestampPattern}" />
+		</tstamp>
+		<echo message="Time after getting test dependencies: ${unittests.timestampAfterGettingTestDependencies}"/>
+
+		<pathconvert pathsep="," property="path" refid="unittests.artifact.dependencies.path"/>
+
+		<!-- Get tests classpath (this includes all dependencies, also JUnit, but not Ant JUnit libs). -->
+		<path id="unittests.testsClasspath">
+			<path refid="unittests.artifact.dependencies.path"/>
+			<pathelement location="${unittests.artifact.compiledClassesDir}"/>
+		</path>
+		<pathconvert property="unittests.testsClasspathAsString" refid="unittests.testsClasspath"/>
+
+		<if>
+			<not><isset property="ant.custom.library.dir"/></not>
+			<then>
+				<property name="ant.custom.library.dir" value="${ant.library.dir}"/>
+			</then>
+		</if>
+
+		<!-- Get tests execution classpath (this also includes Ant JUnit libs + custom extensions). -->
+		<path id="unittests.testsExecutionClasspath">
+			<!-- first we add our tests classpath (derived from pom) ... -->
+			<path refid="unittests.testsClasspath"/>
+			<!-- ... and then we add some additional libs which are needed for JUnit execution from Ant and logging. -->
+			<path id="unittest.extensions.libs">
+				<fileset dir="${ant.custom.library.dir}" includes="bt.ant-junit-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-jul-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-ndc-*.jar" />
+			</path>
+			<pathelement location="${ant.library.dir}/ant.jar"/>
+			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
+			<pathelement location="${ant.library.dir}/ant-junit4.jar"/>
+		</path>
+		
+		<pathconvert property="unittests.testsExecutionClasspathAsString" refid="unittests.testsExecutionClasspath"/>
+
+		<!-- ********************* -->
+		<!-- In order to resolve the problem of a long classpath on command line on Windows, the classpath can be replaced by a
+			single jar file with an in-manifest Class-Path attribute whose value lists all the jar and zip files the class path should contain. -->
+		<if>
+			<length string="${unittests.testsExecutionClasspathAsString}" when="gt" length="1800"/>
+			<then>
+				<echo message="Execution classpath length is greater than the expected length. Creating manifest classpath ..."/>
+				<property name="unittests.testsExecutionClasspathManifestJarFile" location="${unittests.artifact.reportsDir}/manifest_classpath_helper.jar"/>
+				<manifestclasspath property="unittests.testsExecutionClasspathManifestClasspathProperty" jarfile="${unittests.testsExecutionClasspathManifestJarFile}"
+					maxParentLevels="100">
+					<classpath refid="unittests.testsExecutionClasspath"/>
+				</manifestclasspath>
+				<jar destfile="${unittests.testsExecutionClasspathManifestJarFile}">
+					<manifest>
+						<attribute name="Class-Path" value="${unittests.testsExecutionClasspathManifestClasspathProperty}"/>
+					</manifest>
+				</jar>
+				<path id="unittests.finalTestsExecutionClasspath">
+					<pathelement path="${unittests.testsExecutionClasspathManifestJarFile}"/>
+				</path>
+			</then>
+			<else>
+				<path id="unittests.finalTestsExecutionClasspath">
+					<path refId="unittests.testsExecutionClasspath"/>
+				</path>
+			</else>
+		</if>
+		<pathconvert property="unittests.finalTestsExecutionClasspathAsString" refid="unittests.finalTestsExecutionClasspath"/>
+
+		<if>
+			<istrue value="${unittests.measureTestCoverage}"/>
+			<then>
+				<if>
+					<isset property="pom.project.properties.testedArtifacts" />
+					<then>
+						<echo message="Tested artifact(s) specified explicitly in POM." />
+						<property name="unittests.testedArtifactsWithoutVersions" value="${pom.project.properties.testedArtifacts}"/>
+						</then>
+					<else>
+						<echo message="No tested artifact(s) specified. Assuming single tested artifact based on test artifact name ..." />
+						<bt:removeSuffix string="${pom.project.groupId}:${pom.project.artifactId}" suffix="-test" resultProperty="unittests.testedArtifactsWithoutVersions" />
+					</else>
+				</if>
+
+				<bt:extractSolutionsFromSolutionListString solutionListString="${unittests.artifact.solutionsAsString}"
+					artifacts="${unittests.testedArtifactsWithoutVersions}" resultProperty="unittests.testedArtifacts" />
+
+				<!-- There might be a better/cleaner way to do this using Malaclypse tooling. -->
+				<bt:transformArtifactsString artifactsString="${unittests.testedArtifacts}" transformationPattern="${unittests.localRepository}${file.separator}$GROUPID${file.separator}$ARTIFACTID${file.separator}$VERSION${file.separator}$ARTIFACTID-$VERSION.$JAR_OR_WAR" resultProperty="unittests.testedartifactsJarsAndWars" groupIdPartsSeparatorInTarget="${file.separator}"/>
+				<bt:replace string="${unittests.testedartifactsJarsAndWars}" resultProperty="unittests.testedartifactsJars" target=".war" replacement="-classes.jar"/>
+				<bt:transformArtifactsString artifactsString="${unittests.testedArtifacts}" transformationPattern="${unittests.localRepository}${file.separator}$GROUPID${file.separator}$ARTIFACTID${file.separator}$VERSION${file.separator}$ARTIFACTID-$VERSION-sources.jar" resultProperty="unittests.testedartifactsSources" groupIdPartsSeparatorInTarget="${file.separator}"/>
+			</then>
+		</if>
+
+		<!-- ********************* -->
+		<echo message="Junit Tests Settings: "/>
+		<echo message="  excluded test categories:        ${unittests.excludedCategories}"/>
+		<echo message="  test classes include regex:      ${unittests.testClasses.includeRegex}"/>
+		<echo message="  test classes exclude regex:      ${unittests.testClasses.excludeRegex}"/>
+		<echo message="  max report file key length:      ${unittests.artifact.maxReportFileKeyLength}"/>
+		<echo message="  logging.properties file:         ${unittests.loggingPropertiesFile}"/>
+		<echo message="  tests working directory:         ${unittests.artifact.rootDir}"/>
+		<echo message="  tests sources directory:         ${unittests.artifact.sourcesDir}"/>
+		<echo message="  tests classpath:                 ${unittests.testsClasspathAsString}"/>
+		<echo message="  tests execution classpath:       ${unittests.testsExecutionClasspathAsString}"/>
+		<echo message="  final tests execution classpath: ${unittests.finalTestsExecutionClasspathAsString}"/>
+		<echo message="  output format:                   ${unittests.outputFormat}"/>
+		<echo message="  reports directory:               ${unittests.artifact.reportsDir}"/>
+		<if>
+			<isset property="java.executable"/>
+			<then>
+				<echo message="  java executable:                 ${java.executable}"/>
+			</then>
+		</if>
+		<if>
+			<istrue value="${unittests.measureTestCoverage}"/>
+			<then>
+				<echo message="Test Coverage Settings: "/>
+				<echo message="  tested artifacts:                ${unittests.testedArtifacts}"/>
+				<echo message="  tested artifacts classpath:      ${unittests.testedartifactsJars}"/>
+			</then>
+		</if>
+
+		<!-- *** Find test classes and (relevant) test methods. *** -->
+		<!-- Explanation: we could also just run a simple batchtest, but that would run ALL tests. We want to filter out some tests
+			though (e.g. tests that depend on a custom environment). One could filter tests using Ignore annotation, but then Eclipse
+			would ignore them too. The suggested approach is to use TestSuites. But then developers would have to define TestSuites
+			that only include the 'real' unit tests.
+			To keep it as simple as possible for developers, we instead search relevant test classes and methods using a custom task. -->
+		<bt:findJunitTests testsSrcDir="${unittests.artifact.sourcesDir}" testsClasspathString="${unittests.testsClasspathAsString}"
+			resultProperty="unittests.testClassesAndMethods" testClassesIncludeRegex="${unittests.testClasses.includeRegex}"
+			testClassesExcludeRegex="${unittests.testClasses.excludeRegex}" excludedCategories="${unittests.excludedCategories}"
+			verbose="true"/>
+
+		<if>
+			<equals arg1="${unittests.testClassesAndMethods}" arg2=""/>
+			<then>
+				<echo message="No tests found."/>
+				<property name="unittests.testsFound" value="false"/>
+			</then>
+			<else>
+				<property name="unittests.testsFound" value="true"/>
+
+				<!-- write logging.properties file -->
+				<echo message="${unittests.loggingProperties}" file="${unittests.loggingPropertiesFile}" append="false" encoding="UTF-8" />
+
+				<echo message="Found the following test classes and methods: ${unittests.testClassesAndMethods}"/>
+
+				<!-- *** Run unit tests *** -->
+				<echo message="Running tests and writing reports to ${unittests.artifact.reportsDir}."/>
+
+				<if>
+					<istrue value="${unittests.measureTestCoverage}"/>
+					<then>
+						<property name="unittests.artifact.jacocoReportFile" value="${unittests.artifact.reportsDir}/jacoco.exec" />
+						<jacoco:agent property="jacoco.agent.vmparam" destfile="${unittests.artifact.jacocoReportFile}"/>
+						<echo message="Jacoco settings: ${jacoco.agent.vmparam}"/>
+					</then>
+					<else>
+						<!-- just a dummy parameter -->
+						<property name="jacoco.agent.vmparam" value="-DtestCoverageMeasurementEnabled=false" />
+					</else>
+				</if>
+
+				<property name="unittests.jvmarg1" value="-Djava.util.logging.config.file=${unittests.loggingPropertiesFile}"/>
+				<property name="unittests.jvmarg2" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.propertiesIncludeRegex=unittests.artifact.fullyQualifiedName"/>
+				<property name="unittests.jvmarg3" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.sysoutMaxLengthForSuccess=20000"/>
+				<property name="unittests.jvmarg4" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.syserrMaxLengthForSuccess=50000"/>
+				<property name="unittests.jvmarg5" value="-Dcom.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter.outputFormat=${unittests.outputFormat}"/>
+				<if>
+					<!-- Check if Java version is 8. -->
+					<or>
+						<!-- This could be improved by getting the Java version from the executable.
+							Without that the specified Java may not match the actual one in local environments.
+							Also we should actually check for 8 or lower. -->
+						<equals arg1="${pom.project.properties.java.version}" arg2="1.8"/>
+						<equals arg1="${pom.project.properties.java.version}" arg2="8"/>
+					</or>
+					<then>
+						<echo message="Not adding add-opens."/>
+						<property name="unittests.jvmarg6" value="-Ddummy.property=set-instead-of-add-opens"/>
+					</then>
+					<else>
+						<echo message="Adding add-opens."/>
+						<property name="unittests.jvmarg6" value="--add-opens=java.base/java.lang=ALL-UNNAMED"/>
+					</else>
+				</if>
+
+				<tstamp>
+					<format property="unittests.timestampBeforeRunningTests" pattern="${unittests.timestampPattern}" />
+				</tstamp>
+				<echo message="Time before running tests: ${unittests.timestampBeforeRunningTests}"/>
+
+				<!-- Only if java executable is specified we want to pass it as jvm parameter to the junit ant task.
+					The 'else' block is equal to the 'then' block except that 'jvm' parameter is removed.
+					(We tried to used presetdef, but it failed because of bt:btBatchTest nested element.)-->
+				<if>
+					<isset property="java.executable"/>
+					<then>
+						<echo message="Forking JVM to run tests with Java executable ${java.executable}."/>
+						<bt:junit jvm="${java.executable}" printsummary="false" fork="true" forkmode="once" includeantruntime="false" haltonfailure="${unittests.haltOnFailure}" failureproperty="unittests.errorOccurred"
+							showoutput="${unittests.showoutput}" maxmemory="4000m" filtertrace="true" logfailedtests="false" dir="${unittests.artifact.rootDir}" newenvironment="false" timeout="${unittests.timeout}">
+							<!--
+							<jvmarg value="-Xdebug"/>
+							<jvmarg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+							 -->
+
+							<jvmarg value="${unittests.jvmarg1}"/>
+							<jvmarg value="${unittests.jvmarg2}"/>
+							<jvmarg value="${unittests.jvmarg3}"/>
+							<jvmarg value="${unittests.jvmarg4}"/>
+							<jvmarg value="${unittests.jvmarg5}"/>
+							<jvmarg value="${unittests.jvmarg6}"/>
+
+							<!-- This enables the Jacoco agent which monitors test coverage. -->
+							<jvmarg value="${jacoco.agent.vmparam}"/>
+
+							<!-- We pass the excluded categories also via environment, so that (custom) runners can filter based on categories too. -->
+							<env key="TESTS_EXCLUDED_CATEGORIES" value="${unittests.excludedCategories}"/>
+							<!-- We don't actually need this variable, but we must make sure that (if set) it is not passed to the forked JVM.
+								That's because it might be something like:
+								LD_LIBRARY_PATH: /opt/java/jdk17/lib/server:/opt/java/jdk17/lib:/opt/java/jdk17/../lib
+								i.e. it might point to another JDK. -->
+							<env key="LD_LIBRARY_PATH" value="/NOT_USED"/>
+
+							<classpath>
+								<path refid="unittests.finalTestsExecutionClasspath"/>
+							</classpath>
+							<formatter classname="com.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter" extension=".xml"/>
+
+							<bt:btBatchTest todir="${unittests.artifact.reportsDir}" skipNonTests="true" classesAndMethods="${unittests.testClassesAndMethods}"
+								reportPrefix="${unittests.reports.prefix}" reportMaxLength="${unittests.artifact.maxReportFileKeyLength}" />
+						</bt:junit>
+					</then>
+					<else>
+						<bt:junit printsummary="false" fork="true" forkmode="once" includeantruntime="false" haltonfailure="${unittests.haltOnFailure}" failureproperty="unittests.errorOccurred"
+							showoutput="${unittests.showoutput}" maxmemory="4000m" filtertrace="true" logfailedtests="false" dir="${unittests.artifact.rootDir}" newenvironment="false" timeout="${unittests.timeout}">
+							<!--
+							<jvmarg value="-Xdebug"/>
+							<jvmarg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+							 -->
+							<jvmarg value="${unittests.jvmarg1}"/>
+							<jvmarg value="${unittests.jvmarg2}"/>
+							<jvmarg value="${unittests.jvmarg3}"/>
+							<jvmarg value="${unittests.jvmarg4}"/>
+							<jvmarg value="${unittests.jvmarg5}"/>
+							<jvmarg value="${unittests.jvmarg6}"/>
+
+							<!-- This enables the Jacoco agent which monitors test coverage. -->
+							<jvmarg value="${jacoco.agent.vmparam}"/>
+
+							<!-- We pass the excluded categories also via environment, so that (custom) runners can filter based on categories too. -->
+							<env key="TESTS_EXCLUDED_CATEGORIES" value="${unittests.excludedCategories}"/>
+
+							<classpath>
+								<path refid="unittests.finalTestsExecutionClasspath"/>
+							</classpath>
+							<formatter classname="com.braintribe.build.ant.junitextensions.ExtendedXmlJUnitResultFormatter" extension=".xml"/>
+
+							<bt:btBatchTest todir="${unittests.artifact.reportsDir}" skipNonTests="true" classesAndMethods="${unittests.testClassesAndMethods}"
+								reportPrefix="${unittests.reports.prefix}" reportMaxLength="${unittests.artifact.maxReportFileKeyLength}" />
+						</bt:junit>
+					</else>
+				</if>
+
+				<tstamp>
+					<format property="unittests.timestampAfterRunningTests" pattern="${unittests.timestampPattern}" />
+				</tstamp>
+				<echo message="Time after running tests: ${unittests.timestampAfterRunningTests}"/>
+
+				<echo message="Done running tests."/>
+
+				<if>
+					<and>
+						<istrue value="${unittests.measureTestCoverage}"/>
+						<istrue value="${unittests.testsFound}"/>
+					</and>
+
+					<then>
+						<echo message="Creating code coverage report."/>
+
+						<local name="unittests.testedArtifactsSourcesDir" />
+						<property name="unittests.testedArtifactsSourcesDir" value="${unittests.artifact.reportsDir}/tested-sources" />
+
+						<!-- Force downloading of sources (needed for tested artifacts from other groups).
+							TODO: we should download sources of the tested artifacts only, not also of their dependencies. -->
+
+						<bt:dependencies dependencies="${unittests.testedArtifacts}" useScope="runtime" >
+							<FileSetTarget id="unittests.testedArtifacts.sourcesFileset.NOT_USED" type="sources:jar"/>
+						</bt:dependencies>
+
+						<unzip dest="${unittests.testedArtifactsSourcesDir}">
+							<filelist dir="." files="${unittests.testedartifactsSources}" />
+						</unzip>
+
+						<jacoco:report>
+							<executiondata>
+								<file file="${unittests.artifact.jacocoReportFile}" />
+							</executiondata>
+							<structure name="Tests for ${unittests.testedArtifacts}">
+								<classfiles>
+									<filelist dir="." files="${unittests.testedartifactsJars}" />
+								</classfiles>
+								<sourcefiles encoding="UTF-8">
+									<fileset dir="${unittests.testedArtifactsSourcesDir}" />
+								</sourcefiles>
+							</structure>
+							<html destdir="${unittests.artifact.coverageReportsDir}" />
+							<xml destfile="${unittests.artifact.coverageReportsDir}/report.xml" />
+						</jacoco:report>
+
+						<echo message="Done creating code coverage report."/>
+					</then>
+				</if>
+			</else>
+		</if>
+	</target>
+
+</project>

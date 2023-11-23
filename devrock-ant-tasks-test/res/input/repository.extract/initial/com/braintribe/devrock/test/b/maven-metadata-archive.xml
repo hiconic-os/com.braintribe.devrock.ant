@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+	<!-- retrieved from [http://localhost:8080/archive/] -->
+	<groupId>com.braintribe.devrock.test</groupId>
+	<artifactId>b</artifactId>
+	<versioning>
+		<lastUpdated>20210310085053</lastUpdated>
+		<versions>
+			<version>1.0.1</version>
+		</versions>
+	</versioning>
+</metadata>

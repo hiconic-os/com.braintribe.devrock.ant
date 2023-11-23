@@ -1,0 +1,27 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="changeWithoutVariables">
+    
+	<target name="changeWithoutVariables">
+        <bt:changeVersion version="1.0.2">
+            <pom file="no.variables.pom.xml"/>
+        </bt:changeVersion>    	    	
+	</target>
+	
+	<target name="changeWithVariables">
+        <bt:changeVersion version="1.0.2">
+            <pom file="variables.pom.xml"/>
+        </bt:changeVersion>    	    	
+	</target>
+	
+	<target name="changeWithIncompleteVariables">
+	        <bt:changeVersion version="1.0.2">
+	            <pom file="incomplete.variables.pom.xml"/>
+	        </bt:changeVersion>    	    	
+		</target>
+	
+	<target name="changeWithMixedVariables">
+        <bt:changeVersion version="1.0.2">
+            <pom file="mixed.variables.pom.xml"/>
+        </bt:changeVersion>    	    	
+	</target>
+	
+</project>

@@ -1,0 +1,28 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dependencies">
+    <target name="dependencies">
+        <bt:dependencies filesetId="classpath">
+            <pom file="pom.xml"/>        
+        	<FilesetTarget id="jars" type=":jar"/>
+        	<FilesetTarget id="poms" type=":pom" />
+        	<FilesetTarget id="sources" type="sources:jar"/>
+        	<FilesetTarget id="javadocs" type="javadoc:jar"/>
+        
+        </bt:dependencies>
+    
+    	<pathconvert refid="classpath" property="classpath_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="classpath.txt" message="${classpath_dump}" />
+    
+    	<pathconvert refid="jars" property="jars_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="jars.txt" message="${jars_dump}" />
+    	
+    	<pathconvert refid="poms" property="poms_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="poms.txt" message="${poms_dump}" />
+    	
+    	<pathconvert refid="sources" property="sources_dump" pathsep="${line.separator}" dirsep="/" />
+        <echo file="sources.txt" message="${sources_dump}" />
+		
+    	<pathconvert refid="javadocs" property="javadocs_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="javadocs.txt" message="${javadocs_dump}" />
+    	
+	</target>
+</project>

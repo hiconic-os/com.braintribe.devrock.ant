@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+	<groupId>com.braintribe.devrock.test</groupId>
+	<artifactId>t</artifactId>
+	<versioning>
+		<latest>1.0.1</latest>
+		<lastUpdated>20210325022548</lastUpdated>
+		<versions>
+			<version>1.0.1</version>
+		</versions>
+	</versioning>
+</metadata>

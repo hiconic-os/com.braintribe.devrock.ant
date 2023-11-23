@@ -1,0 +1,54 @@
+<!--
+Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
+
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library; See http://www.gnu.org/licenses/.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.braintribe.devrock.ant</groupId>
+	<artifactId>parent</artifactId>
+	<version>1.0.44</version>
+	<packaging>pom</packaging>
+	<properties>
+		<java.version>21</java.version>
+		<V.com.braintribe.devrock.ant>[1.0,1.1)</V.com.braintribe.devrock.ant>
+		<V.com.braintribe.archives>[2.0,2.1)</V.com.braintribe.archives>
+		<V.com.braintribe.common>[2.0,2.1)</V.com.braintribe.common>
+		<V.com.braintribe.devrock>[2.0,2.1)</V.com.braintribe.devrock>
+		<V.com.braintribe.gm>[2.0,2.1)</V.com.braintribe.gm>
+		<V.com.braintribe.execution>[2.0,2.1)</V.com.braintribe.execution>
+		<V.com.braintribe.security>[2.0,2.1)</V.com.braintribe.security>
+		<V.com.braintribe.xml>[2.0,2.1)</V.com.braintribe.xml>
+		<V.com.braintribe.wire>[2.0,2.1)</V.com.braintribe.wire>
+		<!-- Third party libraries -->
+		<V.ant-contrib>1.0b3</V.ant-contrib>
+		<!-- In some cases (e.g. when writing a report) we need the junit library in the ant/lib folder. It is not there by default,
+			hence we have added it as a dependency to devrock-ant-tasks.
+			The version should match the version of JUnit in Ant, which is specified in artifact ant-junit,
+			see e.g. org/apache/ant/ant-junit/1.10.14/ant-junit-1.10.14.pom.
+			Therefore, whenever updating the version of Ant (i.e. V.org.apache.ant), this should be updated accordingly. -->
+		<V.junit>4.13.2</V.junit>
+		<V.org.apache.ant>1.10.14</V.org.apache.ant>
+		<V.org.jacoco>0.8.1</V.org.jacoco>
+		<V.commons-cli>1.2</V.commons-cli>
+		<V.commons-io>2.5</V.commons-io>
+		<V.net.sf.opencsv>1.8</V.net.sf.opencsv>
+		<V.org.apache.bcel>5.2</V.org.apache.bcel>
+		<V.org.apache.velocity>2.1</V.org.apache.velocity>
+		<V.org.slf4j>1.6.0</V.org.slf4j>
+	</properties>
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>A free software license that allows users to run, study, share, and modify the software.</comments>
+        </license>
+    </licenses>
+</project>

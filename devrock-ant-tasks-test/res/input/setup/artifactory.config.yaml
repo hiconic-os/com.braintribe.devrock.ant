@@ -1,0 +1,18 @@
+!com.braintribe.devrock.model.repository.RepositoryConfiguration {            
+    repositories: [
+      !com.braintribe.devrock.model.repository.MavenHttpRepository {
+           name: 'third-party',
+            user: '${env.DEVROCK_TESTS_READ_USERNAME}',
+            password: '${env.DEVROCK_TESTS_READ_PASSWORD}',
+            url: '${env.DEVROCK_TESTS_REPOSITORY_BASE_URL}/third-party',
+            checkSumPolicy: ignore,            
+        },                                                        
+        !com.braintribe.devrock.model.repository.MavenHttpRepository {
+           name: 'devrock',
+            user: '${env.DEVROCK_TESTS_READ_USERNAME',
+            password: '${env.DEVROCK_TESTS_READ_PASSWORD}',
+            url: '${env.DEVROCK_TESTS_REPOSITORY_BASE_URL}/core-dev',
+            checkSumPolicy: ignore,            
+        },                                                        
+    ]
+}

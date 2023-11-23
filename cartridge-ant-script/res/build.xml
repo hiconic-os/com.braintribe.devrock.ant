@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2018 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dist" name="cartridge-ant-script">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<property name="context" location="context"/>
+	<property name="packagingInfoDir" location="${context}/WEB-INF/Resources/Packaging"/>
+
+    <target name="create-packaging-info" depends="init">
+        <mkdir dir="${packagingInfoDir}"/>
+        <bt:dependencies packagingFile="${packagingInfoDir}/packaging.xml" pathId="dummyPath" pomFile="pom.xml"/>
+    </target>
+
+	<target name="compile" depends="create-packaging-info, javadoc">
+		<!-- normalize Java version: 1.8 or 8 -> 8; 1.17 or 17 -> 17 -->
+		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
+		<javac release="${pom.project.properties.java.version.normalized}" source="${pom.project.properties.java.version.normalized}" target="${pom.project.properties.java.version.normalized}" srcdir="${src}" destdir="${build}" encoding="UTF-8" debug="true" debuglevel="lines,source,vars" includeantruntime="false" verbose="${javac.verbose}">
+			<include name="**/*.java"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+	</target>
+
+	<target name="dist" depends="clean, compile, dist-javadoc">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}/lib"/>
+		<!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+		<jar basedir="${build}" jarfile="${dist}/lib/${versionedName}.jar"/>
+		<copy file="${dist}/lib/${versionedName}.jar" tofile="${dist}/${versionedName}-classes.jar" />
+		<jar basedir="${src}" jarfile="${dist}/${versionedName}-sources.jar"/>
+
+		<bt:dependencies pathId="runtime.classpath" filesetId="runtime.fileset" useScope="runtime">
+			<bt:pom refid="pom.project"/>
+		</bt:dependencies>
+
+		<copy todir="${dist}/lib">
+			<resources refid="runtime.fileset"/>
+			<mapper type="flatten" />
+		</copy>
+	</target>
+
+	<target name="assemble" depends="dist">
+		<mkdir dir="${dist}/assembled"/>
+
+		<property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
+
+		<war destfile="${dist}/assembled/${versionedName}.war" webxml="${webXmlLocation}">
+			<lib dir="${dist}/lib"/>
+			<fileset dir="${context}">
+				<exclude name="WEB-INF/web.xml"/>
+			</fileset>
+		</war>
+	</target>
+
+	<target name="install" depends="assemble,install-preset">
+		<bt.install-all/>
+	</target>
+
+</project>

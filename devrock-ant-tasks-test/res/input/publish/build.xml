@@ -1,0 +1,45 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="publish">
+	
+	<target name="common">
+    	<bt:pom file="t-1.0.2-pc.pom" id="pom.project"/>
+	</target>
+	
+    <target name="publish" depends="common">        
+    	<property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}" />
+    	
+        <bt:publish increaseVersion="true" skipGit="true">
+            <pom refid="pom.project"/>
+        </bt:publish>    	
+    </target>
+	
+
+    <target name="publishWithOverwrite" depends="common">        
+        <property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}" />
+        
+        <bt:publish increaseVersion="true" skipGit="true" overwrite="true">
+            <pom refid="pom.project"/>
+        </bt:publish>       
+    </target>
+	
+	<target name="publishWithJson" depends="common">        
+       <property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}" />
+        
+        <bt:publish increaseVersion="true" skipGit="true">
+            <pom refid="pom.project"/>
+        </bt:publish>       
+    </target>
+	
+	
+	<target name="install" depends="common">    		  	   
+	   <property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}" />	        
+        <bt:install file=".">
+            <pom refid="pom.project"/>
+        	<attach file="${versionedName}.jar" type="jar"/>
+            <attach file="${versionedName}-sources.jar" type="sources:jar"/>
+            <attach file="${versionedName}-javadoc.jar" type="javadoc:jar"/>
+            <attach file="${versionedName}.data.zip" skipIfNoFile="true" type="data:zip"/>
+        	<attach file="package.json" skipIfNoFile="true"/>
+        </bt:install>       
+    </target>
+</project>    	
+            

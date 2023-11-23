@@ -1,0 +1,18 @@
+<projectDescription>
+	<name>ant-junit-extensions - com.braintribe.devrock.ant</name>
+	<comment/>
+	<projects/>
+	<buildSpec>
+		<buildCommand>
+			<name>com.braintribe.devrock.arb.builder.ArtifactReflectionBuilder</name>
+			<arguments/>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments/>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+</projectDescription>

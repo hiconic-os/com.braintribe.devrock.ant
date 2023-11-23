@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="resources-ant-script">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<target name="init">
+		<bt:pom id="pom.project" file="pom.xml">
+		</bt:pom>
+
+		<property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}"/>
+		<tstamp/>
+	</target>
+
+	<target name="clean">
+		<delete dir="dist"/>
+	</target>
+
+	<target name="compile" depends="init">
+		<property environment="env"/>
+
+		<if>
+			<available file="package.json" type="file"/>
+			<then>
+				<if>
+					<not>
+						<istrue value="${env.TRIBEFIRE_JS_LIBRARY_COMPILATION_ENABLED}"/>
+					</not>
+					<then>
+						<echo message="Skipping js compilation because TRIBEFIRE_JS_LIBRARY_COMPILATION_ENABLED is not equal to true. Installation will be skipped too." />
+						<!-- Artifact requires building with yarn but this is not enabled in this environment. See environment variable above.
+							To make sure that we don't publish anything that has not been compiled, we completely disable installation of this artifact.
+							In transitive builds it will be fetched from remote repositories instead. -->
+						<property name="js.installation.disabled" value="true"/>
+					</then>
+					<else>
+						<delete dir="src"/>
+
+						<local name="yarn.command"/>
+						<if>
+							<os family="windows" />
+							<then>
+								<!-- Unfortunately exec command won't find Windows batch scripts, unless the extension is specified. -->
+								<property name="yarn.command" value="yarn.cmd"/>
+							</then>
+							<else>
+								<property name="yarn.command" value="yarn"/>
+							</else>
+						</if>
+
+						<exec executable="${yarn.command}" failonerror="true" />
+						<exec executable="${yarn.command}" failonerror="true">
+							<arg value="build"/>
+						</exec>
+					</else>
+				</if>
+			</then>
+		</if>
+	</target>
+
+	<target name="dist" depends="clean, compile" unless="${js.installation.disabled}">
+		<mkdir dir="dist"/>
+		<zip destfile="${dist}/${versionedName}.js.zip" basedir="src"/>
+	</target>
+
+	<target name="install" depends="dist" unless="${js.installation.disabled}">
+		<bt:install file="pom.xml">
+			<pom refid="pom.project"/>
+			<attach file="asset.man" type="asset:man"/> <!-- optional, but required in js-ux-module case -->
+			<attach file="dist/${versionedName}.js.zip" type="js.zip"/>
+		</bt:install>
+	</target>
+
+</project>

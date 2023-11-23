@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant"
+	xmlns:bt="antlib:com.braintribe.build.ant.tasks" name="com.braintribe.ArtifactContainer" default="update-plugin-classpath" basedir=".">
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="dist" location="dist"/>
+
+	<target name="init">
+		<bt:pom id="maven.project" file="pom.xml"/>	
+
+		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
+		<!-- Create the time stamp -->
+		<tstamp/>
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target name="download-deps" depends="init">
+		<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" sourcesFilesetId="compile.sources.fileset" useScope="compile">
+			<pom refid="maven.project" />
+		</bt:dependencies>
+	</target>
+
+	<target name="update-classpath" depends="download-deps">
+		<!--
+		<bt:update-classpath fileSetId="compile.fileset" sourceFileSetId="compile.sources.fileset" sourcesNeeded="false" />
+		-->
+		<bt:update-classpath fileSetId="compile.fileset" />
+	</target>
+	
+	
+	<target name="clean" description="clean up" >
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+	
+	<target name="update-plugin-classpath" depends="download-deps">
+	     <delete dir="lib"/>
+	     <copy todir="lib" flatten="true"><fileset refid="compile.fileset"/></copy>
+		
+		<!-- delete superfluous sources -->
+		 <delete><fileset dir="lib" includes="*-sources.jar"/></delete> 
+		
+	     <fileset id="plugin-libs" dir="lib"></fileset>
+	     <property name="plugin-lib-root" value="${basedir}/lib"/>
+	     <pathconvert property="convertedPath" refid="plugin-libs" dirsep="/" pathsep="${line.separator}">
+	           <map from="${plugin-lib-root}" to="lib"/>
+	     </pathconvert>
+	     <pathconvert property="convertedPathForManifest" refid="plugin-libs" dirsep="/" pathsep=",">
+	           <map from="${plugin-lib-root}" to="lib"/>
+	     </pathconvert>
+	     <echo file="deps.tmp" append="false">${convertedPath}</echo>
+	     <replaceregexp file="deps.tmp" flags="g" match="\.jar" replace=".jar'/>"/>
+	     <replaceregexp file="deps.tmp" flags="g" match="lib/" replace="&lt;classpathentry kind='lib' path='lib/"/>
+	    
+	     <loadfile srcFile="deps.tmp" property="deps"/>
+	     <delete file="deps.tmp"/>
+	     <replaceregexp file=".classpath" flags="gm" match=".*&lt;classpathentry.*lib.*/&gt;" replace=""/>
+	     <property name="substitute" value="${deps}${line.separator}&lt;/classpath&gt;"/>
+	     <replaceregexp file=".classpath" match="&lt;/classpath&gt;" replace="${substitute}"/>
+	     <manifest file="META-INF/MANIFEST.MF" mode="update">
+	      <attribute name="Bundle-ClassPath" value=".,${convertedPathForManifest}"/>
+	     </manifest>
+	   </target>
+</project>
+
+
+

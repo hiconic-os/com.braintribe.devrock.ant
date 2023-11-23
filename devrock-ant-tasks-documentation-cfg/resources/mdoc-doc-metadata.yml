@@ -1,0 +1,18 @@
+---
+!com.braintribe.doc.meta.CustomDocMetaData
+
+title: "Devrock Ant Tasks Documentation"
+
+assets: 
+  "com.braintribe.devrock.ant:devrock-ant-tasks-documentation": &1
+    displayTitle: Ant Tasks
+    startingPoint: devrock-ant-tasks.html
+  "com.braintribe.devrock:mc-ng-principles": &2
+    displayTitle: mc-ng principles
+    startingPoint: principles.html
+  
+entrypoints:
+  - assetId: com.braintribe.devrock:mc-ng-principles
+    displayInfo: *2    
+  - assetId: com.braintribe.devrock.ant:devrock-ant-tasks-documentation
+    displayInfo: *1      

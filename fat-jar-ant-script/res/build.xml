@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="fat-jar-ant-script" default="dist" basedir=".">
+
+	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+
+	<target name="dist" depends="dist-main" description="generate the distribution" >
+			<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime">
+				<bt:pom refid="pom.project"/>
+			</bt:dependencies>
+			
+			<mkdir dir="${dist}/lib"/>
+			
+			<copy todir="${dist}/lib">
+					<resources refid="runtime.fileset"/>
+					<mapper type="flatten"/>
+			</copy>
+	</target>
+
+	<target name="assemble" depends="dist">	
+		<fileset id="final-cp" dir="${dist}/lib"/>
+		<pathconvert property="manifest-cp" refid="final-cp" pathsep=" ">
+				<chainedmapper>
+					<mapper type="flatten"/>
+					<filtermapper>
+						<replacestring from=" " to="%20"/>
+					</filtermapper>
+				</chainedmapper>
+			</pathconvert>
+			<jar destfile="${dist}/${versionedName}.jar">
+				<fileset dir="${dist}/lib">
+					<include name="*.jar"/>
+				</fileset>
+				<manifest>
+					<attribute name="Main-Class" value="${application.main}"/>
+					<attribute name="Class-Path" value="${manifest-cp}"/>
+				</manifest>
+			</jar>
+			
+			<mkdir dir="${dist}/assembled/"/>
+	</target>
+
+	<target name="install" depends="dist,install-preset,assemble">		
+		<bt.install-all>
+			<attach file="${dist}/${versionedName}.jar" classifier=":jar"/>
+		</bt.install-all>
+	</target>
+	
+</project>

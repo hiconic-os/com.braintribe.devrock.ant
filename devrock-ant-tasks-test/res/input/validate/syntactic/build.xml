@@ -1,0 +1,45 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="validate.valid">
+    <!-- valids --> 
+	<target name="validate.valid">
+        <bt:validatePomFormat pomFile="valid.pom.xml" />
+		<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+	
+	<target name="validate.valid.2">
+	     <bt:validatePomFormat pomFile="valid.pom2.xml" />
+		<echo message="${pomValidationResult}" file="validation.txt"/>		
+	</target>
+	
+	<!-- invalids -->
+	<target name="validate.invalid">
+	        <bt:validatePomFormat pomFile="invalid.pom.xml"/>
+			<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+	<target name="validate.invalid.2">
+	        <bt:validatePomFormat pomFile="invalid.pom2.xml"/>
+			<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+	
+	<target name="validate.invalid.3">
+		        <bt:validatePomFormat pomFile="invalid.pom3.xml"/>
+				<echo message="${pomValidationResult}" file="validation.txt"/>
+		</target>
+	
+	<!-- malformed -->
+	<target name="validate.invalid.malformed">
+	        <bt:validatePomFormat pomFile="malformed.pom.xml"/>
+			<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+	
+	<!-- incomplete parent reference -->
+	<target name="validate.invalid.parent">
+	        <bt:validatePomFormat pomFile="incomplete.parent.pom.xml"/>
+			<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+	
+	<!-- invalid parent reference : no version, parent version is ranged -->
+	<target name="validate.invalid.parent.reference">
+	        <bt:validatePomFormat pomFile="invalid.version.derivation.pom.xml"/>
+			<echo message="${pomValidationResult}" file="validation.txt"/>
+	</target>
+</project>

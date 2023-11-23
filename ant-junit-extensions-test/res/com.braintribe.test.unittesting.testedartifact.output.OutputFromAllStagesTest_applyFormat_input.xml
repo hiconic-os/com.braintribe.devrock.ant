@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="0" failures="0" hostname="vie-nb-mla" name="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" skipped="0" tests="2" time="0.042" timestamp="2018-03-15T15:50:57">
+  <properties>
+    <property name="unittests.artifact.fullyQualifiedName" value="com.braintribe.test.unittesting:TestedArtifactTest#1.0" />
+  </properties>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" name="test1" time="0.001">
+    <system-out><![CDATA[_beforeInSuperType2__beforeInSuperType1__before2__before1__test1__after1__after2__afterInSuperType1__afterInSuperType2_]]></system-out>
+  </testcase>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" name="test2" time="0.0">
+    <system-out><![CDATA[_beforeInSuperType2__beforeInSuperType1__before2__before1__test2__after1__after2__afterInSuperType1__afterInSuperType2_]]></system-out>
+  </testcase>
+  <system-out><![CDATA[_beforeClassInSuperType2__beforeClassInSuperType1__beforeClass2__beforeClass1_{{ExtendedXmlJUnitResultFormatter}} [ TESTS OUTPUT MOVED FROM HERE ]_afterClass1__afterClass2__afterClassInSuperType1__afterClassInSuperType2_]]></system-out>
+  <system-err><![CDATA[{{ExtendedXmlJUnitResultFormatter}} [ TESTS OUTPUT MOVED FROM HERE ]]]></system-err>
+</testsuite>

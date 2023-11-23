@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"
+	name="common-ant-script" default="dist" basedir=".">
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="META-INF" location="${build}/META-INF"/>
+	<property name="dist" location="dist"/>
+	<property name="res" location="res"/>
+	<property name="version.output.file" value="[NOT_SET]" />
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+	<target name="init" depends="common-init" />
+	<target name="generate-artifact-reflection" depends="init" if="${devrock.ant.feature.artifact-reflection-generation}">
+		<property name="ar-build-dir" value="${build}"/>
+		<bt:generate-artifact-reflection buildDir="${ar-build-dir}">
+			<pom refid="pom.project" />
+		</bt:generate-artifact-reflection>
+	</target>
+	<target name="common-init">
+		<!-- "generateXyz" can be specified directly, inherited from "generateOptionals" (if
+			that was specified) or has a default value -->
+		<if>
+			<!-- If "generateOptionals" was not specified, we set properties that are true by
+				default -->
+			<not>
+				<isset property="generateOptionals" />
+			</not>
+			<then>
+				<property name="generateJsinterop" value="true"/>
+			</then>
+		</if>
+		<!-- Now we set everything else to "generateOptionals" or "false" if "generateOptionals"
+			wasn't specified -->
+		<property name="generateOptionals" value="false"/>
+		<property name="generateJsinterop" value="true"/>
+		<property name="generateJavadoc" value="${generateOptionals}"/>
+		<bt:pom id="pom.project" file="pom.xml" />
+		<property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}"/>
+		<tstamp/>
+		<mkdir dir="${build}"/>
+	</target>
+	<target name="getArtifactVersion" depends="common-init">
+		<if>
+			<not>
+				<equals arg1="${version.output.file}" arg2="[NOT_SET]" />
+			</not>
+			<then>
+				<echo file="${version.output.file}" message="${pom.project.version}"/>
+			</then>
+		</if>
+		<echo message="Artifact version: ${pom.project.version}" />
+	</target>
+	<target name="download-deps" depends="common-init">
+		<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" sourcesFilesetId="compile.sources.fileset"
+			useScope="compile">
+			<pom refid="pom.project" />
+		</bt:dependencies>
+	</target>
+	<target name="update-classpath" depends="download-deps">
+		<bt:update-classpath fileSetId="compile.fileset" sourceFileSetId="compile.sources.fileset"
+			sourcesNeeded="true" />
+	</target>
+	<target name="publish" depends="common-init">
+		<property name="increaseVersion" value="true" />
+		<property name="skipGit" value="false" />
+		<bt:publish increaseVersion="${increaseVersion}" skipGit="${skipGit}">
+			<pom refid="pom.project"/>
+		</bt:publish>
+	</target>
+	<target name="solutions" depends="common-init">
+		<bt:dependencies pomFile="pom.xml" solutionListFile="solutions" addSelf="false">
+			<FileSetTarget id="models" type="model:xml"/>
+			<FileSetTarget id="jars" type="jar"/>
+		</bt:dependencies>
+		<bt:exportSolutions solutionsSourceFile="solutions" solutionsTargetFile="solutionsList"
+			solutionsHashFile="solutions-hash" />
+	</target>
+	<target name="install-preset">
+		<if>
+			<available file="${dist}/assembled/${versionedName}.war" type="file"/>
+			<then>
+				<property name="fileToInstall" location="${dist}/assembled/${versionedName}.war"/>
+			</then>
+			<elseif>
+				<available file="${dist}/lib/${versionedName}.jar" type="file"/>
+				<then>
+					<property name="fileToInstall" location="${dist}/lib/${versionedName}.jar"/>
+				</then>
+			</elseif>
+		</if>
+		<if>
+			<isset property="fileToInstall"/>
+			<then>
+				<presetdef name="bt.install-base">
+					<bt:install file="${fileToInstall}">
+						<pom refid="pom.project"/>
+						<attach file="${dist}/${versionedName}-sources.jar" classifier="sources" />
+						<attach file="${dist}/${versionedName}.js.zip" skipIfNoFile="true" />
+						<attach file="dist/${versionedName}-context.zip" classifier="context:zip" skipIfNoFile="true"/>
+					</bt:install>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-base">
+					<bt:install>
+						<pom refid="pom.project"/>
+					</bt:install>
+				</presetdef>
+			</else>
+		</if>
+		<if>
+			<available file="${dist}/${versionedName}-classes.jar" type="file"/>
+			<then>
+				<presetdef name="bt.install-classes">
+					<bt.install-base>
+						<attach file="${dist}/${versionedName}-classes.jar" type="classes:jar"/>
+					</bt.install-base>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-classes">
+					<bt.install-base/>
+				</presetdef>
+			</else>
+		</if>
+		<if>
+			<and>
+				<istrue value="${generateJavadoc}"/>
+				<available file="${dist}/${versionedName}-javadoc.jar" type="file"/>
+			</and>
+			<then>
+				<presetdef name="bt.install-javadoc">
+					<bt.install-classes>
+						<attach file="${dist}/${versionedName}-javadoc.jar" classifier="javadoc"/>
+					</bt.install-classes>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-javadoc">
+					<bt.install-classes/>
+				</presetdef>
+			</else>
+		</if>
+		<if>
+			<available file="asset.man" type="file"/>
+			<then>
+				<presetdef name="bt.install-asset">
+					<bt.install-javadoc>
+						<attach file="asset.man" type="asset:man"/>
+					</bt.install-javadoc>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-asset">
+					<bt.install-javadoc/>
+				</presetdef>
+			</else>
+		</if>
+		<if>
+			<available file="${dist}/${versionedName}-asset.man" type="file"/>
+			<then>
+				<presetdef name="bt.install-dist-asset">
+					<bt.install-asset>
+						<attach file="${dist}/${versionedName}-asset.man" type="asset:man"/>
+					</bt.install-asset>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-dist-asset">
+					<bt.install-asset/>
+				</presetdef>
+			</else>
+		</if>
+		<if>
+			<available file="${dist}/${versionedName}-plugin.zip" type="file"/>
+			<then>
+				<presetdef name="bt.install-plugin">
+					<bt.install-dist-asset>
+						<attach file="${dist}/${versionedName}-plugin.zip" classifier="plugin"/>
+					</bt.install-dist-asset>
+				</presetdef>
+			</then>
+			<else>
+				<presetdef name="bt.install-plugin">
+					<bt.install-dist-asset/>
+				</presetdef>
+			</else>
+		</if>
+		<presetdef name="bt.install-all">
+			<bt.install-plugin/>
+		</presetdef>
+	</target>
+	<target name="install" depends="dist,install-preset">
+		<bt.install-all/>
+	</target>
+
+	<!-- This target is introduced here to a have a normalization for compiling on that level. Default implementation does nothing -->
+	<target name="compile">
+		<echo message="nothing to compile in this artifact"/>
+	</target>
+
+	<target name="dist-jar-license">
+		<mkdir dir="${META-INF}"/>
+		<if>
+			<available file="../COPYING" type="file"/>
+			<then><copy file="../COPYING" todir="${META-INF}"/></then>
+		</if>
+		<if>
+			<available file="../COPYING.LESSER" type="file"/>
+			<then><copy file="../COPYING.LESSER" todir="${META-INF}"/></then>
+		</if>
+		<if>
+			<available file="../LICENCE" type="file"/>
+			<then><copy file="../LICENCE" todir="${META-INF}"/></then>
+		</if>
+		<if>
+			<available file="../NOTICE" type="file"/>
+			<then><copy file="../NOTICE" todir="${META-INF}"/></then>
+		</if>
+	</target>
+
+	<!-- This target is introduced here to a have a normalization for build pipelines to call a target that checks linking to dependencies 
+	(e.g to find contract breaks). This normally resolves to compiling without any further packaging, assembling or even installing.
+	The default from this level simply does nothing -->
+	<target name="check-linking" depends="compile"/>
+
+	<!-- Although we overwrite install, we must provide an empty dist target because the
+		install from common-ant-script depends on dist-->
+	<target name="dist" depends="init"/>
+	<target name="javadoc" depends="common-init">
+		<!-- This is needed in the compile task. Therefor it is properly not placed inside
+			the if statement. -->
+		<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" useScope="compile">
+			<pom refid="pom.project"/>
+		</bt:dependencies>
+		<if>
+			<istrue value="${generateJavadoc}"/>
+			<then>
+				<fileset id="javadoc.javaFilesFileset" dir="${src}">
+					<include name="**/*.java"/>
+				</fileset>
+				<local name="javadoc.javaFilesFilesetAsString" />
+				<pathconvert refid="javadoc.javaFilesFileset" property="javadoc.javaFilesFilesetAsString"
+					setonempty="false"/>
+				<if>
+					<isset property="javadoc.javaFilesFilesetAsString"/>
+					<then>
+						<mkdir dir="${dist}/javadoc"/>
+						<tstamp>
+							<format property="javadoc_currentYear" pattern="yyyy" />
+						</tstamp>
+						<javadoc access="protected" additionalparam="-Xdoclint:none -quiet" author="false"
+							charset="UTF-8" classpathref="compile.classpath" destdir="${dist}/javadoc"
+							docencoding="UTF-8" encoding="UTF-8" excludepackagenames=" " failonerror="false"
+							failonwarning="false" includenosourcepackages="true" linksource="false" locale="en_US"
+							maxmemory="3G" nodeprecated="false" nodeprecatedlist="false" nohelp="false"
+							noindex="false" nonavbar="false" notree="false" packagenames="*" serialwarn="false"
+							source="1.8" sourcepath="${src}" use="true" useexternalfile="true" verbose="false"
+							version="false" windowtitle="${versionedName} Documentation" >
+							<doctitle><![CDATA[${versionedName}]]></doctitle>
+							<header><![CDATA[${versionedName}]]></header>
+							<footer><![CDATA[${versionedName}]]></footer>
+							<bottom>
+								<![CDATA[Copyright Braintribe IT-Technologies GmbH, Austria, ${javadoc_currentYear}
+								- All Rights Reserved]]>
+							</bottom>
+							<fileset dir="${src}"/>
+							<!-- We need this to support documenting classes from the default package -->
+						</javadoc>
+					</then>
+				</if>
+			</then>
+		</if>
+	</target>
+	<target name="dist-javadoc" depends="javadoc">
+		<if>
+			<and>
+				<istrue value="${generateJavadoc}"/>
+				<available file="${dist}/javadoc" type="dir"/>
+			</and>
+			<then>
+				<jar basedir="${dist}/javadoc" jarFile="${dist}/${versionedName}-javadoc.jar"/>
+			</then>
+		</if>
+	</target>
+	<target name="dist-jsinterop" depends="make-jsinterop">
+		<if>
+			<available file="${dist}/jsinterop" type="dir"/>
+			<then>
+				<zip basedir="${dist}/jsinterop" destfile="${dist}/${versionedName}.js.zip"/>
+			</then>
+		</if>
+	</target>
+	<target name="make-jsinterop" />
+</project>

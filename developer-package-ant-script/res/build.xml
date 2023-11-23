@@ -1,0 +1,106 @@
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+--><project xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+
+	<target name="clean" description="clean up" >
+		<delete dir="${dist}"/>
+	</target>
+
+	<target name="dist" description="generate the distribution" depends="init,clean">
+		<property name="dr-zip" location="${dist}/dr-zip"/>
+		<property name="build" location="build"/>
+		<property name="dr-dir" location="${dr-zip}/${pom.project.artifactId}"/>
+
+		<mkdir dir="${dr-dir}"/>
+
+		<property name="env-dir" location="${dr-dir}/env"/>
+
+		<mkdir dir="${env-dir}"/>
+
+		<property name="tools-dir" location="${dr-dir}/tools"/>
+
+		<mkdir dir="${tools-dir}"/>
+
+		<property name="gradle-version" value="8.3"/>
+		<property name="gradle-dir" value="${tools-dir}/gradle"/>
+		<property name="gradle-distribution-filename" value="gradle-${gradle-version}-bin.zip"/>
+
+		<property name="ant-version" value="1.10.14"/>
+		<property name="ant-dir" value="${tools-dir}/ant"/>
+		<property name="ant-distribution-filename" value="apache-ant-${ant-version}-bin.zip"/>
+
+		<get src="https://downloads.gradle.org/distributions/${gradle-distribution-filename}" dest="${dist}/${gradle-distribution-filename}"/>
+		<unzip src="${dist}/${gradle-distribution-filename}" dest="${tools-dir}"/>
+		<move file="${tools-dir}/gradle-${gradle-version}" tofile="${gradle-dir}"/>
+
+		<get src="https://archive.apache.org/dist/ant/binaries/${ant-distribution-filename}" dest="${dist}/${ant-distribution-filename}"/>
+		<unzip src="${dist}/${ant-distribution-filename}" dest="${tools-dir}"/>
+		<move file="${tools-dir}/apache-ant-${ant-version}" tofile="${ant-dir}"/>
+
+		<bt:dependencies>
+			<pom refid="pom.project"/>
+			<FileSetTarget id="jinni-fileset" type="application:zip"/>
+		</bt:dependencies>
+
+		<bt:dependencies>
+			<pom refid="pom.project"/>
+			<FileSetTarget id="devrock-ant-tasks-fileset" type="libs:zip"/>
+		</bt:dependencies>
+
+		<property name="jinni-dir" location="${tools-dir}/jinni"/>
+		<property name="ant-libs-dir" location="${tools-dir}/ant-libs"/>
+
+		<mkdir dir="${jinni-dir}"/>
+		<mkdir dir="${ant-libs-dir}"/>
+		<unzip dest="${jinni-dir}">
+			<resources refid="jinni-fileset"/>
+		</unzip>
+		<unzip dest="${ant-libs-dir}">
+			<resources refid="devrock-ant-tasks-fileset"/>
+		</unzip>
+
+		<copy todir="${dr-dir}">
+			<fileset dir="res/${pom.project.artifactId}"/>
+		</copy>
+	</target>
+
+	<target name="assemble" depends="dist">
+		<zip destfile="${dist}/${versionedName}.zip">
+			<zipfileset dir="${dr-zip}" filemode="754">
+			  <and>
+    		    <not>
+    			  <!--  for performance -->
+    			  <filename name="**/*.jar"/>
+    			</not>
+	            <containsregexp expression="^#!\s*\/bin\/(ba)?sh"/>
+    		  </and>
+			</zipfileset>
+			<zipfileset dir="${dr-zip}">
+			  <not>
+			    <and>
+				  <not>
+       			    <!--  for performance -->
+    				<filename name="**/*.jar"/>
+    			  </not>
+  	              <containsregexp expression="^#!\s*\/bin\/(ba)?sh"/>
+    			</and>
+    		  </not>
+			</zipfileset>
+		</zip>
+	</target>
+
+	<target name="install" depends="assemble" description="install to local maven repository">
+		<bt:install file="pom.xml">
+			<pom refid="pom.project"/>
+			<attach file="dist/${versionedName}.zip" type=":zip"/>
+		</bt:install>
+	</target>
+
+</project>

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- simple settings for a test with has unavailable repositories -->
+<settings>	
+	<localRepository>${env.repo}</localRepository>			
+	<profiles>		
+		<profile>
+			<id>default</id>
+			<repositories>
+				<!-- repolet backed repository 'archive' -->
+				<repository>
+					<id>archive</id>
+					<layout>default</layout>
+					<url>http://localhost:${env.port}/archive/</url>					
+					<releases>
+						<enabled>true</enabled>
+						<updatePolicy>never</updatePolicy>
+					</releases>
+				</repository>
+				<repository>
+					<id>unavailable</id>
+					<layout>default</layout>
+					<url>http://localhost:${env.port}/unavailable/</url>					
+					<releases>
+						<enabled>true</enabled>
+						<updatePolicy>never</updatePolicy>
+					</releases>
+				</repository>															
+			</repositories>
+			<properties>
+			 <target-repository>archive</target-repository>
+			</properties>						
+		</profile>		
+	</profiles>
+	<activeProfiles>
+		<activeProfile>default</activeProfile>
+	</activeProfiles>
+</settings>

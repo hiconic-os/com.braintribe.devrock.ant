@@ -1,0 +1,11 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="ensureRange">
+    <target name="ensureRange">
+
+        <bt:ensureRange input="${range}" outputProperty="ensuredRange" root="${basedir}" expand="false" ignoreProperty="ignoreRange"/>
+    	
+        <echo message="${ensuredRange}" file="ensuredRange.txt"/>
+    	<echo message="${ignoreRange}" file="ignoreRange.txt"/>
+    	
+    </target>
+
+</project>

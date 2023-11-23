@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2018 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dist" name="servlet-ant-script">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<property name="context" location="context"/>
+
+	<target name="compile" depends="init, javadoc">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="true" debuglevel="lines,source,vars" destdir="${build}" encoding="UTF-8" source="${pom.project.properties.java.version}" srcdir="${src}" target="${pom.project.properties.java.version}" includeantruntime="false">
+			<include name="**/*.java"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+	</target>
+
+	<target name="dist" depends="clean, compile, dist-javadoc, dist-jar-license">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}/lib"/>
+		<!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+		<jar basedir="${build}" jarfile="${dist}/lib/${versionedName}.jar"/>
+		<copy file="${dist}/lib/${versionedName}.jar" tofile="${dist}/${versionedName}-classes.jar" />
+		<jar basedir="${src}" jarfile="${dist}/${versionedName}-sources.jar"/>
+
+		<bt:dependencies pathId="runtime.classpath" filesetId="runtime.fileset" useScope="runtime">
+			<bt:pom refid="pom.project"/>
+		</bt:dependencies>
+
+		<copy todir="${dist}/lib">
+			<resources refid="runtime.fileset"/>
+			<mapper type="flatten" />
+		</copy>
+	</target>
+
+	<target name="assemble" depends="dist">
+		<mkdir dir="${dist}/assembled"/>
+
+		<property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
+
+		<war destfile="${dist}/assembled/${versionedName}.war" webxml="${webXmlLocation}">
+			<lib dir="${dist}/lib"/>
+			<fileset dir="${context}">
+				<exclude name="WEB-INF/web.xml"/>
+			</fileset>
+		</war>
+	</target>
+
+	<target name="install" depends="assemble,install-preset">
+		<bt.install-all/>
+	</target>
+
+</project>

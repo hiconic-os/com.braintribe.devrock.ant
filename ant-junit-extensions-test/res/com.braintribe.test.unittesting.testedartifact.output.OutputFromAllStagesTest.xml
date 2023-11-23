@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite errors="0" failures="0" hostname="vie-nb-mla" name="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" skipped="0" tests="2" time="0.064" timestamp="2016-10-06T16:34:12">
+  <properties>
+    <property name="unittests.artifact.fullyQualifiedName" value="com.braintribe.test.unittesting:TestedArtifactTest#1.0" />
+  </properties>
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" name="test1" time="0.002" />
+  <testcase classname="com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest" name="test2" time="0.001" />
+  <system-out><![CDATA[_beforeClassInSuperType2__beforeClassInSuperType1__beforeClass2__beforeClass1_
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test1 startTest SysOut ] ***
+_beforeInSuperType2__beforeInSuperType1__before2__before1__test1__after1__after2__afterInSuperType1__afterInSuperType2_
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test1 endTest SysOut ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test2 startTest SysOut ] ***
+_beforeInSuperType2__beforeInSuperType1__before2__before1__test2__after1__after2__afterInSuperType1__afterInSuperType2_
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test2 endTest SysOut ] ***
+_afterClass1__afterClass2__afterClassInSuperType1__afterClassInSuperType2_]]></system-out>
+  <system-err><![CDATA[
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test1 startTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test1 endTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test2 startTest SysErr ] ***
+
+*** {{ExtendedXmlJUnitResultFormatter}} [ com.braintribe.test.unittesting.testedartifact.output.OutputFromAllStagesTest/test2 endTest SysErr ] ***
+]]></system-err>
+</testsuite>

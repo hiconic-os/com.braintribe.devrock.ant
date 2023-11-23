@@ -1,0 +1,25 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="listRange">
+    	
+	<target name="listRange">
+        <bt:ensureRange input="." outputProperty="ensuredRange" root="${basedir}" expand="false" ignoreProperty="ignoreRange"/>
+
+            <property name="target" value="install"/>
+
+            <xmlproperty file="parent/pom.xml" />
+            <property name="version" value="${project.properties.major}.${project.properties.minor}.${project.properties.revision}"/>
+            <property name="groupId" value="${project.groupId}"/>
+            <property name="list-range-output-file" value="./list-range.txt"/>
+
+            <bt:buildSet id="buildSet"
+                    buildRange="${ensuredRange}"
+                    codebaseRoot="${basedir}"
+                    codebasePattern="$${artifactId}"
+                    groups="${groupId}#${version}"
+                    defaultGroup="${groupId}"
+                    defaultVersion="${version}"
+            />          
+        <bt:transitive-build mode="individual" target="list-range" buildSetRefId="buildSet" ignore="${ignoreRange}"/>		
+	</target>
+
+
+</project>

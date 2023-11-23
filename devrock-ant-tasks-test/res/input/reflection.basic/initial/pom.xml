@@ -1,0 +1,40 @@
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2018 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.braintribe.devrock.test</groupId>    
+    <artifactId>test-artifact-model</artifactId>
+    <version>2.0.4-pc</version>
+    <properties>
+        <archetype>model</archetype>
+        <V.com.braintribe.gm>[2.0,2.1)</V.com.braintribe.gm>
+        <V.com.braintribe.devrock>[2.0,2.1)</V.com.braintribe.devrock>
+    </properties> 
+    <dependencies> 
+        <dependency> 
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>root-model</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>reason-model</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>consumable-artifact-model</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>compiled-artifact-model</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+    </dependencies>
+</project>

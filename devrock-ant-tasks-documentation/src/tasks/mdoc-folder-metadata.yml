@@ -1,0 +1,28 @@
+!com.braintribe.doc.meta.CustomFolderMetaData
+files:
+  import.md:
+    displayTitle: "Task: Importing build scripts"
+  buildranges.md:
+    displayTitle: "Task: Transitive builds"
+  transitivebuild.md:
+    displayTitle: "Build ranges for transitive builds"
+  dependencies.md:
+    displayTitle: "Task: determining dependencies"
+  pom.md:
+    displayTitle: "Task: reading poms"
+  validate-pom.md:
+    displayTitle: "Task: validating poms"
+  commitToGit.md:
+    displayTitle: "Task: commit to git"
+  changeVersion.md:
+    displayTitle: "Task: change version of artifact"
+  publish-direct.md:
+    displayTitle: "Task: direct publishing"
+  publish.md:
+    displayTitle: "Task: full-fledged publishing"
+  repository-extract.md:
+    displayTitle: "Task: repository extract"
+  solutionhasher.md:
+    displayTitle: "Task: generating hashes (solution hasher)"
+
+  

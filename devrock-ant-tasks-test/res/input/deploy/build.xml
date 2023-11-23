@@ -1,0 +1,17 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="deploy">
+	
+	<target name="common">
+    	<bt:pom file="t-1.0.1.pom" id="pom.project"/>
+	</target>
+	
+    <target name="deploy">            	
+        <bt:publish-direct artifact="com.braintribe.devrock.test:t#1.0.1"> 
+    	   <remoteRepository refId="archive">
+    	         <authentication username="user" password="pwd" />        
+    	    </remoteRepository>
+    	</bt:publish-direct>
+    </target>
+	
+
+</project>    	
+            

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="tf-module-ant-script" default="dist" basedir=".">
+
+	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+
+	<target name="dist" depends="clean, compile, update-manifest, dist-javadoc">
+		<jar jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF">
+			<fileset dir="${build}"/>
+		</jar>
+		<jar jarfile="${dist}/${versionedName}-sources.jar" basedir="${src}"/>
+		<!-- Copied from lib-ant-script and only added the following if-block (resources.zip). -->
+		<if>
+			<available file="resources" type="dir"/>
+			<then>
+				<bt:indexRes dir="resources" exclude="public/.*" destfile="${dist}/__resource-index__.yml" />
+				<zip destfile="${dist}/${versionedName}-resources.zip">
+					<fileset dir="resources"/>
+					<fileset dir="dist" includes="__resource-index__.yml" />
+				</zip>
+			</then>
+		</if>
+	</target>
+
+	<target name="install" depends="dist">
+		<bt:install file="${dist}/lib/${versionedName}.jar">
+			<pom refid="pom.project"/>
+			<attach file="asset.man" type="asset:man"/>
+			<attach file="${dist}/${versionedName}-sources.jar" classifier="sources"/>
+		</bt:install>
+		<if>
+			<available file="${dist}/${versionedName}-javadoc.jar" type="file"/>
+			<then>
+				<bt:install>
+					<pom refid="pom.project"/>
+					<attach file="${dist}/${versionedName}-javadoc.jar" classifier="javadoc"/>
+				</bt:install>
+			</then>
+		</if>
+		<!-- Copied from lib-ant-script and only added the following if-block (resources.zip). -->
+		<if>
+			<available file="dist/${versionedName}-resources.zip" type="file"/>
+			<then>
+				<bt:install>
+					<pom refid="pom.project"/>
+					<attach file="dist/${versionedName}-resources.zip" classifier="resources"/>
+				</bt:install>
+			</then>
+		</if>
+	</target>
+</project>

@@ -1,0 +1,51 @@
+# definition for some build-range tests
+!com.braintribe.devrock.model.repolet.content.RepoletContent {
+artifacts: [
+
+    # terminal
+    { artifactId: "t", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null, "sources:jar": null, "javadoc:jar": null},       
+       dependencies: [                
+          { artifactId: "a",  groupId: "com.braintribe.devrock.test", version: "1.0.1", classifier: "jdk-8"},           
+
+       ],        
+    }, 
+
+    # a - first level child      
+   { artifactId: "a", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {"sources:jar": null, "javadoc:jar": null, "jdk-8:jar": null},
+       dependencies: [                 
+            { artifactId: "b",  groupId: "com.braintribe.devrock.test", version: "1.0.1", classifier: "classes" }, 
+       ],        
+    }, 
+   # b - first level child
+    { artifactId: "b", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {"classes:jar": null, "sources:jar": null, "javadoc:jar": null},
+       dependencies: [                 
+         { artifactId: "x",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+       ],        
+    }, 
+
+
+   # remainder : x
+   { artifactId: "x", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null, "sources:jar": null, "javadoc:jar": null},
+       dependencies: [                 
+            { artifactId: "y",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+       ],        
+    }, 
+
+   # remainder : y
+   { artifactId: "y", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null, "sources:jar": null, "javadoc:jar": null},
+       dependencies: [                 
+            { artifactId: "z",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+       ],        
+    }, 
+
+   # remainder : z
+   { artifactId: "z", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null, "sources:jar": null, "javadoc:jar": null},
+       dependencies: [                    
+       ],        
+    }, 
+
+
+
+  ]
+
+}

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="library-ant-script" default="dist" basedir=".">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<target name="download-deps" depends="init">
+		<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" sourcesFilesetId="compile.sources.fileset" useScope="compile">
+			<pom refid="pom.project" />
+		</bt:dependencies>
+	</target>
+
+	<target name="compile" depends="init, javadoc, generate-artifact-reflection">
+		<if>
+			<and>
+				<istrue value="${pom.project.properties.jsinterop}" />
+				<istrue value="${generateJsinterop}" />
+			</and>
+			<then><property name="parametersOption" value="-parameters"/></then>
+			<else><property name="parametersOption" value=""/></else>
+		</if>
+
+		<if>
+			<istrue value="${javac.verbose}" />
+			<then>
+				<echo message="--------------------------------------------------------------------------------"/>
+				<echo message="Properties before compilation:"/>
+				<echoproperties/>
+				<echo message="--------------------------------------------------------------------------------"/>
+				<echo message="Selected environment variables before compilation:"/>
+				<property environment="env"/>
+				<echo message="JAVA_HOME:       ${env.JAVA_HOME}"/>
+				<echo message="LD_LIBRARY_PATH: ${env.LD_LIBRARY_PATH}"/>
+				<echo message="PATH:            ${env.PATH}"/>
+				<echo message="--------------------------------------------------------------------------------"/>
+			</then>
+		</if>
+		<!-- normalize Java version: 1.8 or 8 -> 8; 1.17 or 17 -> 17 -->
+		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
+		<javac release="${pom.project.properties.java.version.normalized}" source="${pom.project.properties.java.version.normalized}" target="${pom.project.properties.java.version.normalized}" srcdir="${src}" destdir="${build}" encoding="UTF-8" debug="true" debuglevel="lines,source,vars" includeantruntime="false" verbose="${javac.verbose}" 
+			   failonerror="false" errorProperty="compileFailure">
+			<compilerarg line="${parametersOption}"/>
+			<include name="**/*.java"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+		<if>
+			<istrue value="${compileFailure}" />
+			<then>
+				<pathconvert refid="compile.classpath" pathsep="&#10;" property="failureClasspath"/>
+				<echo message="${failureClasspath}" file="${build}/compilation-failure-classpath.txt"/>
+				<echo level="error" message="Compile classpath of failed compilation was written to ${build}/compilation-failure-classpath.txt"/>
+				<fail message="Compilation failure. Details above."/> 
+			</then>
+		</if>
+		<copy todir="${build}">
+			<fileset dir="${src}">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="make-jsinterop" depends="clean, compile">
+		<if>
+			<and>
+				<istrue value="${pom.project.properties.jsinterop}" />
+				<istrue value="${generateJsinterop}" />
+			</and>
+			<then>
+				<bt:dependencies solutionListFile="${dist}/solutions.txt" useScope="compile">
+					<bt:pom file="pom.xml" id="pom"/>
+				</bt:dependencies>
+				<bt:tfjs buildFolder="${build}" solutionListFile="${dist}/solutions.txt" outputDir="${dist}/jsinterop" />
+			</then>
+		</if>
+	</target>
+
+	<!-- specialized library-ant-scripts can reuse this to create ${versionedName}.jar, ${versionedName}-sources.jar -->
+	<!-- and (via dependency targets) ${versionedName}-javadoc.jar -->
+	<target name="dist-main" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license">
+		<jar jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF">
+			<fileset dir="${build}"/>
+		</jar>
+		<jar jarfile="${dist}/${versionedName}-sources.jar">
+			<fileset dir="${src}"/>
+			<!-- optional emul folder that may exist for gwt variations of the library archetype -->
+			<fileset dir="emul" erroronmissingdir="false"/>
+		</jar>
+	</target>
+
+	<target name="dist" depends="dist-main" />
+
+	<!--This creates default MANIFEST file so it always exist because otherwise the jar task fails.-->
+	<!--In child tasks we can add extra attributes (e.g. gm-api-ant-script).-->
+	<target name="update-manifest">
+		<mkdir dir="${META-INF}"/>
+		<manifest file="${META-INF}/MANIFEST.MF" mode="update"/>
+		<if>
+			<isset property="javac.version"/>
+			<then>
+				<replaceregexp file="${META-INF}/MANIFEST.MF"
+					match="(Created-By:) .* (\(.*\))"
+					replace="\1 ${javac.version} \2"
+					byline="true"/>
+			</then>
+		</if>
+	</target>
+
+	<target name="solutions" depends="init">
+		<bt:dependencies pomFile="pom.xml" solutionListFile="solutions" addSelf="false">
+			<FileSetTarget id="models" type="model:xml"/>
+			<FileSetTarget id="jars" type="jar"/>
+		</bt:dependencies>
+
+		<bt:exportSolutions solutionsSourceFile="solutions" solutionsTargetFile="solutionsList" solutionsHashFile="solutions-hash" />
+	</target>
+
+	<!-- Just a helper to examine the classpath -->
+	<target name="show-cp" depends="download-deps">
+		<pathconvert property="cp" refid="compile.classpath" pathsep="&#10;"/>
+		<echo message="${cp}" file="cp.txt"/>
+	</target>
+
+</project>

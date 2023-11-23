@@ -1,0 +1,15 @@
+# definition for some build-range tests
+!com.braintribe.devrock.model.repolet.content.RepoletContent {
+artifacts: [
+
+    # terminal
+    { artifactId: "import-task", groupId: "com.braintribe.devrock.test", version: "1.0.1",
+        parts: { "import:xml": 
+          !com.braintribe.model.resource.FileResource {
+                        name: "import-task-1.0.1-import.xml",
+                        path: "${output}/import-task-1.0.1-import.xml"
+          }
+        }
+    } 
+  ]
+}

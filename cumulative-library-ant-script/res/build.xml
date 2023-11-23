@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="cumulative-library-ant-script" default="dist" basedir=".">
+
+	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK" />
+
+	<target name="dist" depends="dist-main">
+	
+		<bt:dependencies filesetId="runtime.fileset" useScope="runtime">
+			<bt:pom refid="pom.project" />
+		</bt:dependencies>
+
+		<copy todir="${dist}/lib">
+			<resources refid="runtime.fileset" />
+			<mapper type="flatten" />
+		</copy>
+
+		<mkdir dir="${dist}/assembled" />
+
+		<jar jarfile="${dist}/assembled/${versionedName}.jar">
+			<zipgroupfileset dir="${dist}/lib" includes="**/*.jar" />
+		</jar>
+
+		<copy file="${dist}/assembled/${versionedName}.jar" tofile="${dist}/assembled/${pom.project.artifactId}.jar" />
+
+		<!-- TODO: for now we just publish the fat-jar instead. It would be cleaner to publish this with another classifier. -->
+		<copy file="${dist}/assembled/${versionedName}.jar" tofile="${dist}/lib/${versionedName}.jar" overwrite="true" />
+	</target>
+	
+</project>

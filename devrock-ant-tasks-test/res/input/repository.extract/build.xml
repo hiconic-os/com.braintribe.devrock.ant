@@ -1,0 +1,15 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="extract">
+    <target name="extract">
+    	
+        <bt:repositoryExtract pomFile="pom.xml" filesetId="extracted"/>
+    	
+    	<pathconvert refid="extracted" property="extracted_dump" pathsep="${line.separator}" dirsep="/" />
+    	<echo file="extracted.txt" message="${extracted_dump}" />
+	</target>
+	
+	<target name="extractWithExclusions">	        
+	        <bt:repositoryExtract pomFile="pom.xml" filesetId="extracted" globalExclusionsFile="exclusions.txt" />	       
+	        <pathconvert refid="extracted" property="extracted_dump" pathsep="${line.separator}" dirsep="/" />
+	        <echo file="extracted.txt" message="${extracted_dump}" />
+	    </target>
+</project>

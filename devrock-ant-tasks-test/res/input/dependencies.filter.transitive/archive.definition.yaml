@@ -1,0 +1,50 @@
+
+# simple definition for hash download test
+!com.braintribe.devrock.model.repolet.content.RepoletContent {
+artifacts: [
+
+    # data for transitivity test
+    # terminal t
+    { artifactId: "t", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},       
+       dependencies: [                
+          { artifactId: "a",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+          { artifactId: "b",  groupId: "com.braintribe.devrock.test", version: "1.0.1", processingInstructions: {"tag": "serverdeps"}}, 
+
+       ],        
+    }, 
+    # a - first level child      
+   { artifactId: "a", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [                 
+       ],        
+    }, 
+
+    { artifactId: "b", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [           
+          { artifactId: "c",  groupId: "com.braintribe.devrock.test", version: "1.0.1"}, 
+       ],        
+    }, 
+
+   # a - first level child      
+   { artifactId: "c", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [                 
+       ],        
+    }, 
+
+   # data for matching test
+   { artifactId: "tags-terminal", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null},       
+       dependencies: [                
+          { artifactId: "none",  groupId: "com.braintribe.devrock.test.tags", version: "1.0.1"}, 
+          { artifactId: "standard",  groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", processingInstructions: {"tag": "standard"}}, 
+          { artifactId: "one",  groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", processingInstructions: {"tag": "one"}}, 
+          { artifactId: "one-and-two",  groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", processingInstructions: {"tag": "one,two,three"}}, 
+          { artifactId: "classpath",  groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", processingInstructions: {"tag": "classpath,asset"}}, 
+       ],        
+    },  
+
+    { artifactId: "none", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null}}, 
+    { artifactId: "standard", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null}}, 
+    { artifactId: "one", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null}}, 
+    { artifactId: "one-and-two", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null}}, 
+    { artifactId: "classpath", groupId: "com.braintribe.devrock.test.tags", version: "1.0.1", parts: {":jar": null}}, 
+  ]
+}

@@ -1,0 +1,6 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="problem-analysis-folder">
+    <target name="problem-analysis-folder">
+        <bt:determineProcessingDataInsightFolder propertyName="analysis-folder"/>    	    	
+    	<echo file="problem-analysis-folder.txt" message="${analysis-folder}" />
+	</target>
+</project>

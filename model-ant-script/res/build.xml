@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ ============================================================================
+ Braintribe IT-Technologies GmbH - www.braintribe.com
+ Copyright Braintribe IT-Technologies GmbH, Austria, 2002-2015 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+-->
+
+<!--
+	commom ant script for models
+-->
+
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" name="model-ant-script">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<target depends="init" description="prepare automatic source aspects" name="sourcegen">
+		<replaceregexp match="@Artifact\([^\)]*\)" replace="@Artifact(groupId=&quot;${pom.project.groupId}&quot;, artifactId=&quot;${pom.project.artifactId}&quot;, version=&quot;${pom.project.version}&quot;)">
+			<fileset dir="${src}">
+				<include name="**/package-info.java"/>
+			</fileset>
+		</replaceregexp>
+	 </target>
+
+	<target depends="sourcegen, javadoc, generate-artifact-reflection" description="compile the source " name="compile">
+
+		<!-- normalize Java version: 1.8 or 8 -> 8; 1.17 or 17 -> 17 -->
+		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
+		<javac release="${pom.project.properties.java.version.normalized}" source="${pom.project.properties.java.version.normalized}" target="${pom.project.properties.java.version.normalized}" srcdir="${src}" destdir="${build}" encoding="UTF-8" debug="true" debuglevel="lines,source,vars" includeantruntime="false" verbose="${javac.verbose}">
+			<include name="**/*.java"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+		<copy todir="${build}">
+			<fileset dir="${src}">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+
+		<path id="modelClasspath">
+			<path refid="compile.classpath"/>
+			<pathelement location="${build}"/>
+		</path>
+		<pathconvert refid="modelClasspath" property="encodedModelClasspath"/>
+
+		<if>
+			<istrue value="${devrock.ant.feature.model-declaration-generation}"/>
+			<then>
+				<bt:generate-model-declaration classpath="${encodedModelClasspath}" buildDir="${build}">
+					<pom refid="pom.project"/>
+				</bt:generate-model-declaration>
+			</then>
+			<else>
+				<bt:launch commandArtifact="com.braintribe.devrock.ant:model-build-commands#1.0">
+					<param value="-Xms128M"/>
+					<param value="-Xmx1024M"/>
+					<param value="-Dgm.ownCl=true"/>
+					<bt:E t="com.braintribe.build.model.UpdateModelDeclaration">
+						<bt:s n="classpath">${encodedModelClasspath}</bt:s>
+						<bt:L n="buildFolders">
+							<bt:s>${build}</bt:s>
+						</bt:L>
+						<bt:s n="targetFolder">${build}</bt:s>
+						<bt:s n="pomFile">${basedir}/pom.xml</bt:s>
+					</bt:E>
+				</bt:launch>
+			</else>	
+		</if>		
+	</target>
+	
+	<target name="make-jsinterop" depends="clean, compile">
+		<if>
+			<istrue value="${generateJsinterop}" />
+			<then>
+				<bt:dependencies solutionListFile="${dist}/solutions.txt" useScope="runtime">
+					<!-- TODO: use refid instead here -->
+					<bt:pom file="pom.xml" id="pom"/>
+				</bt:dependencies>
+				<bt:tfjs buildFolder="${build}" solutionListFile="${dist}/solutions.txt" outputDir="${dist}/jsinterop" />
+			</then>
+		</if>
+	</target>
+
+	<target name="dist" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license">
+		<mkdir dir="${dist}/lib"/>
+		<jar basedir="${build}" jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF"/>
+		<jar basedir="${src}" jarfile="${dist}/${versionedName}-sources.jar"/>
+		<if>
+			<not>
+				<available file="asset.man"/>
+			</not>
+			<then>
+				<echo message="Generating ${dist}/${versionedName}-asset.man since asset.man does not exist in the artifact root folder."/>
+				<echo file="${dist}/${versionedName}-asset.man" message="$natureType = com.braintribe.model.asset.natures.ModelPriming"/>
+			</then>
+		</if>
+	</target>
+
+	<target name="update-manifest">
+		<mkdir dir="${META-INF}"/>
+		<manifest file="${META-INF}/MANIFEST.MF" mode="update">
+			<attribute name="Gm-Nature" value="model"/>
+		</manifest>
+		<if>
+			<isset property="javac.version"/>
+			<then>
+				<replaceregexp file="${META-INF}/MANIFEST.MF"
+					match="(Created-By:) .* (\(.*\))"
+					replace="\1 ${javac.version} \2"
+					byline="true"/>
+			</then>
+		</if>
+	</target>
+</project>

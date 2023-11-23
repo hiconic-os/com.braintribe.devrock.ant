@@ -1,0 +1,52 @@
+<!--
+ ============================================================================
+ BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
+ Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022 - All Rights Reserved
+ It is strictly forbidden to copy, modify, distribute or use this code without written permission
+ To this file the Braintribe License Agreement applies.
+ ============================================================================
+--><!--
+ If this script needs to be published without having access to another (previous) version of this script,
+ The ant-ant-script/build.xml file can be replaced with this file.
+--><project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
+
+	<!-- Import AntContrib (which e.g. adds support for if/else). -->
+	<taskdef resource="net/sf/antcontrib/antlib.xml" onerror="ignore"/>
+
+	<target name="init">
+		<bt:pom file="pom.xml" id="pom.project"/>
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+
+	<target name="install" depends="init">
+		<bt:install>
+			<pom refid="pom.project"/>
+			<attach file="res/build.xml" type="import:xml"/>
+		</bt:install>
+	</target>
+
+	<target name="publish" depends="init">
+		<property name="increaseVersion" value="true" />
+		<property name="skipGit" value="false" />
+
+		<bt:publish usecase="DEVROCK" increaseVersion="${increaseVersion}" skipGit="${skipGit}">
+			<pom refid="pom.project"/>
+		</bt:publish>
+	</target>
+
+	<target name="getArtifactVersion" depends="init">
+		<if>
+			<not>
+				<equals arg1="${version.output.file}" arg2="[NOT_SET]" />
+			</not>
+			<then>
+				<echo file="${version.output.file}" message="${pom.project.version}"/>
+			</then>
+		</if>
+		<echo message="Artifact version: ${pom.project.version}" />
+	</target>
+</project>

@@ -1,0 +1,181 @@
+<!--
+Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
+
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library; See http://www.gnu.org/licenses/.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.braintribe.devrock.ant</groupId>
+        <artifactId>parent</artifactId>
+        <version>[1.0,1.1)</version>
+    </parent>
+    <artifactId>devrock-ant-tasks</artifactId>
+    <version>1.0.442</version>
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License v3.0</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>A free software license that allows users to run, study, share, and modify the software.</comments>
+        </license>
+    </licenses>
+    <dependencies>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>mc-core-wirings</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>repository-configuration-model</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>artifact-reflection</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>model-declaration-builder-ng</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>version-model</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.execution</groupId>
+            <artifactId>parallel-dag-execution</artifactId>
+            <version>${V.com.braintribe.execution}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.security</groupId>
+            <artifactId>crypto-graphics</artifactId>
+            <version>${V.com.braintribe.security}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>packaging-model</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>basic-marshallers</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.xml</groupId>
+            <artifactId>dom-parser</artifactId>
+            <version>${V.com.braintribe.xml}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>gm-core4-jvm</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>itw-gm-own-cl</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.common</groupId>
+            <artifactId>platform-api</artifactId>
+            <version>${V.com.braintribe.common}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>artifact-model</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>version-processors</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.xml</groupId>
+            <artifactId>dom-utils</artifactId>
+            <version>${V.com.braintribe.xml}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>${V.net.sf.opencsv}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.common</groupId>
+            <artifactId>btansi</artifactId>
+            <version>${V.com.braintribe.common}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>typescript-writer</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>${V.org.apache.ant}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant-junit</artifactId>
+            <version>${V.org.apache.ant}</version>
+            <!-- <scope>provided</scope> -->
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${V.junit}</version>
+        </dependency>
+        <!-- Our scripts use ant-contrib features, e.g. if/else. For convenience we just include ant-contrib as a dependency of bt-ant-tasks. -->
+        <dependency>
+            <groupId>ant-contrib</groupId>
+            <artifactId>ant-contrib</artifactId>
+            <version>${V.ant-contrib}</version>
+            <exclusions>
+                <exclusion>
+                    <!-- Excluding Ant to avoid clashes. -->
+                    <groupId>ant</groupId>
+                    <artifactId>ant</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Adds a custom JUnitResultFormatter. -->
+        <dependency>
+            <groupId>com.braintribe.devrock.ant</groupId>
+            <artifactId>ant-junit-extensions</artifactId>
+            <version>${V.com.braintribe.devrock.ant}</version>
+        </dependency>
+        <!-- Jacoco Ant tasks (test coverage library). -->
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.ant</artifactId>
+            <version>${V.org.jacoco}</version>
+        </dependency>
+        <!-- Adds custom Java Util Logging handlers which are used when running JUnit tests. -->
+        <dependency>
+            <groupId>com.braintribe.common</groupId>
+            <artifactId>logging-jul-extensions</artifactId>
+            <version>${V.com.braintribe.common}</version>
+        </dependency>
+        <!-- Makes GM use its own classloader. This is required for Java 16+. -->
+        <dependency>
+            <groupId>com.braintribe.gm</groupId>
+            <artifactId>itw-gm-own-cl</artifactId>
+            <version>${V.com.braintribe.gm}</version>
+        </dependency>
+        <!-- TODO get rid of this once it's clear the AssemblyValue stuff is not needed.' -->
+    </dependencies>
+</project>
