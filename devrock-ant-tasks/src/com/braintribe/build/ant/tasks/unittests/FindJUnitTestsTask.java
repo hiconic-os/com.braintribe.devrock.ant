@@ -21,7 +21,6 @@ import org.apache.tools.ant.Task;
 import com.braintribe.common.RegexCheck;
 import com.braintribe.common.uncheckedcounterpartexceptions.UncheckedClassNotFoundException;
 import com.braintribe.logging.Logger;
-import com.braintribe.utils.ChildFirstClassLoader;
 import com.braintribe.utils.CollectionTools;
 import com.braintribe.utils.CommonTools;
 import com.braintribe.utils.FileTools;
