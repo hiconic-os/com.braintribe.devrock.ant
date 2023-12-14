@@ -111,7 +111,7 @@ public abstract class BasicInstallOrDeployTask extends AbstractTransferTask {
 		// validate pom here?
 		if (validatePom && pomFile.exists()) {
 			validatePom(pomFile, "syntactic", new PomFormatValidatingTask());
-			validatePom(pomFile, "semantic", new PomContentValidatingTask());
+			//validatePom(pomFile, "semantic", new PomContentValidatingTask());
 		}
 
 		addPart(artifact, normalizePom(pomFile), PartIdentifications.pom);

@@ -57,7 +57,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<property name="unittests.artifact.compiledClassesDir" location="${unittests.artifact.rootDir}/build"/>
 		<property name="unittests.artifact.reportsDir" location="${unittests.artifact.rootDir}/dist/testReports"/>
 		<property name="unittests.artifact.coverageReportsDir" location="${unittests.artifact.reportsDir}/coverage"/>
-		<property name="unittests.excludedCategories" value=""/>
+		<property name="unittests.excludedCategories" value="[NOT_SET]"/>
 		<property name="unittests.testClasses.includeRegex" value=".*"/>
 		<property name="unittests.testClasses.excludeRegex" value=""/>
 		<property name="unittests.measureTestCoverage" value="false" />

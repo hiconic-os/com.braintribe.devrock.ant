@@ -12,6 +12,7 @@ package com.braintribe.build.ant.types;
 import org.apache.tools.ant.BuildException;
 
 import com.braintribe.model.artifact.compiled.CompiledDependency;
+import com.braintribe.model.artifact.essential.ArtifactIdentification;
 import com.braintribe.model.artifact.essential.VersionedArtifactIdentification;
 import com.braintribe.model.version.VersionExpression;
 
@@ -27,6 +28,8 @@ public class Dependency {
 	private String artifactId;
 	private String version;
 	private String scope;
+	private String exclusions;
+	
 	public String getGroupId() {
 		return groupId;
 	}
@@ -45,6 +48,13 @@ public class Dependency {
 	public void setVersion(String version) {
 		this.version = version;
 	}
+	public String getExclusions() {
+		return exclusions;
+	}
+	public void setExclusions(String exclusions) {
+		this.exclusions = exclusions;
+	}
+
 	/**
 	 * Convenience method which sets {@link #groupId}, {@link #artifactId} and {@link #version}. 
 	 * @param condensedArtifactName the condensed artifact name, e.g. <code>com.braintribe:Example#1.2.3</code>
@@ -73,6 +83,12 @@ public class Dependency {
 	}
 	
 	public CompiledDependency asCompiledDependency() {
-		return CompiledDependency.create(getGroupId(), getArtifactId(), VersionExpression.parse(getVersion()), getScope());
+		CompiledDependency result = CompiledDependency.create(getGroupId(), getArtifactId(), VersionExpression.parse(getVersion()), getScope());
+
+		if (exclusions != null)
+			for (String excludedArtifact : exclusions.split(","))
+				result.getExclusions().add(ArtifactIdentification.parse(excludedArtifact));
+
+		return result;
 	}
 }

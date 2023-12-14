@@ -49,25 +49,19 @@
         </fail>
         <property name="java4gwt.executable" value="${env.JAVA_8_HOME}${file.separator}bin${file.separator}java" />
     </target>
-   <!-- <target depends="init" name="download-deps">
-        <bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" sourcesFilesetId="compile.sources.fileset" useScope="compile">
-            <bt:pom refid="maven.project"/>
-        </bt:dependencies>
-    </target> -->
-    <!-- <target depends="download-deps" name="update-classpath">
-        <bt:update-classpath fileSetId="compile.fileset" sourceFileSetId="compile.sources.fileset" sourcesNeeded="true"/>
-    </target> -->
     <target depends="init" name="create-packaging-info">
         <mkdir dir="${packagingInfoDir}"/>
         <bt:dependencies packagingFile="${packagingInfoDir}/packaging.xml" pathId="dummyPath" pomFile="pom.xml"/>
     </target>
 
-    <target depends="init" description="compile the source" name="compile pretty">
-        <antcall target="clean-war"/>
-        <property environment="env"/>
+    <target name="prepare-compile-path" depends="init">
+        <bt:dependencies filesetId="compiler.fileset" useScope="runtime">
+            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl" />
+        </bt:dependencies>
         <path id="gwt.compile.path">
             <resources refid="compile.sources.fileset"/>
             <resources refid="compile.fileset"/>
+            <resources refid="compiler.fileset"/>
             <pathelement location="${src}"/>
         </path>
         <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
@@ -76,9 +70,14 @@
         <echo file=".gwt-compile-classpath" message="${compilePath}"/>
         <echo message="running gwt compiler with: ${java4gwt.executable}"/>
         <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
-            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[1.0,1.1)" />
+            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)" />
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
+    </target>
+
+    <target name="compile pretty" depends="prepare-compile-path">
+        <antcall target="clean-war"/>
+        <property environment="env"/>
         <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
             <!-- Uncomment for remote debugging -->
             <!--
@@ -113,23 +112,9 @@
         <!--<move file="war/grindlebone/grindlebone.nocache.js" tofile="war/grindlebone/gb.js"/>-->
     </target>
 
-    <target depends="init" description="compile the source" name="compile obf">
+    <target name="compile obf" depends="prepare-compile-path">
         <antcall target="clean-war"/>
         <property environment="env"/>
-        <path id="gwt.compile.path">
-            <resources refid="compile.sources.fileset"/>
-            <resources refid="compile.fileset"/>
-            <pathelement location="${src}"/>
-        </path>
-        <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
-        <pathconvert pathsep="&#10;" property="rawCompilePath" refid="gwt.compile.path"/>
-        <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-dev-namespace" prepend="true" />
-        <echo file=".gwt-compile-classpath" message="${compilePath}"/>
-        <echo message="running gwt compiler with: ${java4gwt.executable}"/>
-        <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
-            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[1.0,1.1)" />
-        </bt:dependencies>
-        <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
         <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
             <!-- Uncomment for remote debugging -->
             <!--
@@ -223,19 +208,6 @@
     <target depends="clean pretty" name="assemble pretty">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName}.js.zip</echo>
-        <!--
-        <property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
-        <property name="webLibLocation" value="${context}/WEB-INF/lib"/>
-        <war destfile="${dist}/assembled/${versionedName-debug}.war" webxml="${webXmlLocation}">
-            <lib dir="${webLibLocation}"/>
-            <fileset dir="war">
-                <exclude name="WEB-INF/web.xml"/>
-                <exclude name="**/.svn"/>
-                <exclude name="**/gwt-user.jar"/>
-                <exclude name="**/gwt-dev.jar"/>
-            </fileset>
-            <fileset file="${context}/index.jsp"/>
-        </war>-->
         <zip destfile="${dist}/assembled/${versionedName}.js.zip">
             <fileset dir="war">
                 <include name ="tribefire.js"/>
@@ -257,19 +229,6 @@
     <target depends="clean obf" name="assemble obf">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName}-min.js.zip</echo>
-        <!--
-        <property name="webXmlLocation" value="${context}/WEB-INF/web.xml"/>
-        <property name="webLibLocation" value="${context}/WEB-INF/lib"/>
-        <war destfile="${dist}/assembled/${versionedName-runtime}.war" webxml="${webXmlLocation}">
-            <lib dir="${webLibLocation}"/>
-            <fileset dir="war">
-                <exclude name="WEB-INF/web.xml"/>
-                <exclude name="**/.svn"/>
-                <exclude name="**/gwt-user.jar"/>
-                <exclude name="**/gwt-dev.jar"/>
-            </fileset>
-            <fileset file="${context}/index.jsp"/>
-        </war>-->
         <zip destfile="${dist}/assembled/${versionedName}-min.js.zip">
             <fileset dir="war">
                 <include name ="tribefire.js"/>

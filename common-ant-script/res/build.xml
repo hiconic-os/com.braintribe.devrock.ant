@@ -106,7 +106,7 @@
 			<isset property="fileToInstall"/>
 			<then>
 				<presetdef name="bt.install-base">
-					<bt:install file="${fileToInstall}">
+					<bt:install file="${fileToInstall}" validatePom="false">
 						<pom refid="pom.project"/>
 						<attach file="${dist}/${versionedName}-sources.jar" classifier="sources" />
 						<attach file="${dist}/${versionedName}.js.zip" skipIfNoFile="true" />

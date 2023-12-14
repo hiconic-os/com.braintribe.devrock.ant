@@ -327,8 +327,6 @@ public class Pom extends Task {
 		// raises
 		Integer revision = version.getRevision();
 		if (revision != null) {
-			revision = revision + 1;
-			candidateVersion.setRevision(revision);
 			candidateVersion.setQualifier(candidateVersionSuffix);
 			artifact.setVersion(candidateVersion);
 		}

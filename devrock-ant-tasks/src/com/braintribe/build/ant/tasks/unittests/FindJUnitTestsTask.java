@@ -7,6 +7,9 @@
 
 package com.braintribe.build.ant.tasks.unittests;
 
+import static com.braintribe.utils.lcd.CollectionTools2.newList;
+import static java.util.Collections.emptyList;
+
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -72,11 +75,15 @@ public class FindJUnitTestsTask extends Task {
 	private String testClassesSeparator = "^";
 	private String annotationsExcludeRegex = JUNIT_ANNOTATIONS_IGNORE;
 	private String excludedCategoriesSeparator = ",";
-	private String excludedCategories = 
-			 BT_CATEGORIES_KNOWNISSUE + this.excludedCategoriesSeparator + BT_CATEGORIES_SLOW
-				+ this.excludedCategoriesSeparator + BT_CATEGORIES_SPECIALENVIRONMENT + this.excludedCategoriesSeparator
-			+ BT_CATEGORIES_KNOWNISSUE__OLD + this.excludedCategoriesSeparator + BT_CATEGORIES_SLOW__OLD
-			+ this.excludedCategoriesSeparator + BT_CATEGORIES_SPECIALENVIRONMENT__OLD;
+	private String excludedCategories =  //
+			// @formatter:off
+			BT_CATEGORIES_KNOWNISSUE + excludedCategoriesSeparator + //
+			BT_CATEGORIES_SLOW + excludedCategoriesSeparator + //
+			BT_CATEGORIES_SPECIALENVIRONMENT + excludedCategoriesSeparator + //
+			BT_CATEGORIES_KNOWNISSUE__OLD + excludedCategoriesSeparator + //
+			BT_CATEGORIES_SLOW__OLD + excludedCategoriesSeparator + //
+			BT_CATEGORIES_SPECIALENVIRONMENT__OLD;
+			// @formatter:on
 	private List<Class<?>> excludedCategoryClasses;
 	private String resultProperty = "testClassesAndMethods";
 	private String testsClasspathString;
@@ -273,28 +280,29 @@ public class FindJUnitTestsTask extends Task {
 	}
 
 	private List<Class<?>> getExcludedCategoryClasses() {
-		if (this.excludedCategoryClasses == null) {
-			this.excludedCategoryClasses = new ArrayList<Class<?>>();
-			if (!CommonTools.isEmpty(getExcludedCategories())) {
-				for (final String excludedCategory : CollectionTools.decodeCollection(getExcludedCategories(),
-						getExcludedCategoriesSeparator(), false, true, true, false)) {
-					final Class<?> excludedCategoryClass = getOptionalClass(excludedCategory);
-					if (excludedCategoryClass != null) {
-						this.excludedCategoryClasses.add(excludedCategoryClass);
-					} else {
-						/*
-						 * the category class doesn't exist. This may happen when testing multiple artifacts with the
-						 * same set of excluded categories but different class paths. If a test artifact directly
-						 * depends on JUnit (instead of one of BT test artifacts where the BT annotations are part of
-						 * the dependencies) the BT categories may not be available on the classpath. This is not an
-						 * issue though, because those categories then also cannot be set in the test classes and thus
-						 * we don't have to search for them.
-						 */
-					}
-				}
-			}
+		if (excludedCategoryClasses == null)
+			excludedCategoryClasses = resolveExcludedCategoryClasses();
+
+		return excludedCategoryClasses;
+	}
+
+	private List<Class<?>> resolveExcludedCategoryClasses() {
+		if (CommonTools.isEmpty(excludedCategories))
+			return emptyList();
+
+		List<Class<?>> result = newList();
+
+		for (String excludedCategory : CollectionTools.decodeCollection(excludedCategories, excludedCategoriesSeparator, false, true, true, false)) {
+			/* Class can be null when testing multiple artifacts with the same set of excluded categories but different class paths. If a test
+			 * artifact directly depends on JUnit (instead of one of BT test artifacts where the BT annotations are part of the dependencies) the BT
+			 * categories may not be available on the classpath. This is not an issue though, because those categories then also cannot be set in the
+			 * test classes and thus we don't have to search for them. */
+			Class<?> excludedCategoryClass = getOptionalClass(excludedCategory);
+			if (excludedCategoryClass != null)
+				result.add(excludedCategoryClass);
 		}
-		return this.excludedCategoryClasses;
+
+		return result;
 	}
 
 	/**
@@ -303,8 +311,7 @@ public class FindJUnitTestsTask extends Task {
 	 */
 	@Override
 	public void execute() throws BuildException {
-
-		final String result = getTestClassesAndMethodsString();
+		String result = getTestClassesAndMethodsString();
 
 		getProject().setProperty(getResultProperty(), result);
 	}

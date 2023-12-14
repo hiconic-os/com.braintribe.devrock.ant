@@ -63,7 +63,7 @@
 
         <echo message="running gwt compiler with: ${java4gwt.executable}"/>
         <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
-            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[1.0,1.1)" />
+            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)" />
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
 
