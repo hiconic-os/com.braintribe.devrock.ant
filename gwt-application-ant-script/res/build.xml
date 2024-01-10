@@ -48,24 +48,31 @@
         <bt:dependencies packagingFile="${packagingInfoDir}/packaging.xml" pathId="dummyPath" pomFile="pom.xml"/>
     </target>
 
-    <target depends="clean, create-packaging-info" description="compile the source " name="compile">
-        <mkdir dir="${gwt-work}"/>
-        <property environment="env"/>
+    <target name="prepare-compile-path" depends="init">
+        <bt:dependencies filesetId="compiler.fileset" useScope="runtime">
+            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl" />
+        </bt:dependencies>
         <path id="gwt.compile.path">
             <resources refid="compile.sources.fileset"/>
             <resources refid="compile.fileset"/>
+            <resources refid="compiler.fileset"/>
             <pathelement location="${src}"/>
         </path>
+        <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
         <pathconvert pathsep="&#10;" property="rawCompilePath" refid="gwt.compile.path"/>
-        <!-- we use tribefire.gwt:gwt-tf-patch-java-version which currently contains a copy of DeployableComponent annotation - GWT compiler loads this, so it must be compiled with Java 8 (real one in tf.cortex is 21)  -->
+        <!-- gwt-tf-patch-java-version contains a copy @DeployableComponent annotation, but is compiled with Java 8 -->
         <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-tf-patch" prepend="true" />
         <echo file=".gwt-compile-classpath" message="${compilePath}"/>
-
         <echo message="running gwt compiler with: ${java4gwt.executable}"/>
         <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
             <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)" />
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
+    </target>
+
+    <target depends="clean, create-packaging-info, prepare-compile-path" description="compile the source " name="compile">
+        <mkdir dir="${gwt-work}"/>
+        <property environment="env"/>
 
         <!-- Default value is empty-string, overridden in assemble-pretty -->
         <property name="gwt-pretty-param" value=""/>
