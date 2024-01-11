@@ -28,7 +28,7 @@
 
 		<mkdir dir="${tools-dir}"/>
 
-		<property name="gradle-version" value="8.3"/>
+		<property name="gradle-version" value="8.5"/>
 		<property name="gradle-dir" value="${tools-dir}/gradle"/>
 		<property name="gradle-distribution-filename" value="gradle-${gradle-version}-bin.zip"/>
 
