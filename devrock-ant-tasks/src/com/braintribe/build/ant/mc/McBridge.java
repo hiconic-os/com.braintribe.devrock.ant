@@ -9,6 +9,7 @@ import org.apache.tools.ant.BuildException;
 
 import com.braintribe.devrock.mc.api.repository.CodebaseReflection;
 import com.braintribe.devrock.mc.api.transitive.RangedTerminals;
+import com.braintribe.devrock.mc.core.repository.index.ArtifactIndex;
 import com.braintribe.devrock.model.repository.Repository;
 import com.braintribe.devrock.model.repository.RepositoryConfiguration;
 import com.braintribe.devrock.model.repository.filters.ArtifactFilter;
@@ -69,7 +70,7 @@ public interface McBridge extends AutoCloseable {
 	 * an {@link ReasonException} if not found
 	 * @param dependency - the {@link CompiledDependencyIdentification} 
 	 * @param parts - a number of {@link PartIdentification}
-	 * @return - the {@link Artifact
+	 * @return - the {@link Artifact}
 	 */
 	Artifact resolveArtifact(CompiledDependencyIdentification dependency, PartIdentification... parts);
 	
@@ -91,7 +92,6 @@ public interface McBridge extends AutoCloseable {
 	 * resolves all build dependencies for the passed terminals, using the filter
 	 * @param rangedTerminals - the {@link RangedTerminals}
 	 * @param artifactFilter - the {@link ArtifactFilter} to filter-out artifacts
-	 * @return
 	 */
 	AnalysisArtifactResolution resolveBuildDependencies(RangedTerminals rangedTerminals, ArtifactFilter artifactFilter);
 	
@@ -253,7 +253,9 @@ public interface McBridge extends AutoCloseable {
 	 * @param file - the {@link File} to write to
 	 */
 	void writeResolutionToFile( AnalysisArtifactResolution resolution, File file);
-	
+
+	Maybe<ArtifactIndex> readLatestArtifactIndex(Repository repository);
+
 	@Override
 	void close();
 }

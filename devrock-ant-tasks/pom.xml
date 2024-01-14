@@ -122,6 +122,11 @@ You should have received a copy of the GNU Lesser General Public License along w
             <version>${V.com.braintribe.devrock}</version>
         </dependency>
         <dependency>
+            <groupId>com.braintribe.devrock</groupId>
+            <artifactId>release-configuration-model</artifactId>
+            <version>${V.com.braintribe.devrock}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
             <version>${V.org.apache.ant}</version>

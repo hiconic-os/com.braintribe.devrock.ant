@@ -48,9 +48,11 @@ import com.braintribe.devrock.mc.api.transitive.TransitiveDependencyResolver;
 import com.braintribe.devrock.mc.api.transitive.TransitiveResolutionContext;
 import com.braintribe.devrock.mc.api.transitive.TransitiveResolutionContextBuilder;
 import com.braintribe.devrock.mc.core.commons.McReasonOutput;
+import com.braintribe.devrock.mc.core.configuration.ArtifactIndexReader;
 import com.braintribe.devrock.mc.core.declared.DeclaredArtifactIdentificationExtractor;
 import com.braintribe.devrock.mc.core.filters.ArtifactFilterExpert;
 import com.braintribe.devrock.mc.core.filters.ArtifactFilters;
+import com.braintribe.devrock.mc.core.repository.index.ArtifactIndex;
 import com.braintribe.devrock.mc.core.resolver.clashes.ClashResolver;
 import com.braintribe.devrock.mc.core.resolver.common.AnalysisArtifactResolutionPreparation;
 import com.braintribe.devrock.mc.core.resolver.rulefilter.BasicTagRuleFilter;
@@ -661,6 +663,16 @@ public class DirectMcBridge implements McBridge {
 		return partResolution.get().isBacked();
 	}
 	
+	@Override
+	public Maybe<ArtifactIndex> readLatestArtifactIndex(Repository repository) {
+		ArtifactDataBackendContract backendContract = getBackendContract();
+
+		ArtifactIndexReader reader = new ArtifactIndexReader();
+		reader.setArtifactDataResolverFactory(backendContract::repository);
+
+		return reader.readFullArtifactIndex(repository);
+	}
+
 	private ArtifactDataBackendContract getBackendContract() {
 		return classpathResolverContext.contract(ArtifactDataBackendContract.class);
 	}
