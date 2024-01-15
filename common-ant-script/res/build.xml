@@ -278,10 +278,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 							<doctitle><![CDATA[${versionedName}]]></doctitle>
 							<header><![CDATA[${versionedName}]]></header>
 							<footer><![CDATA[${versionedName}]]></footer>
-							<bottom>
-								<![CDATA[Copyright Braintribe IT-Technologies GmbH, Austria, ${javadoc_currentYear}
-								- All Rights Reserved]]>
-							</bottom>
+							<bottom><![CDATA[${pom.project.license.comment}]]></bottom>
 							<fileset dir="${src}"/>
 							<!-- We need this to support documenting classes from the default package -->
 						</javadoc>

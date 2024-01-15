@@ -14,9 +14,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.braintribe.build.ant.mc.Bridges;
 import com.braintribe.build.ant.tasks.validation.PomContentValidatingTask;
@@ -198,7 +204,7 @@ public class Pom extends Task {
 		
 		Project project = getProject();
 		
-		new ColorSupport(getProject()).installConsole();
+		new ColorSupport(project).installConsole();
 
 		// add to pom registry
 		if (id != null) {
@@ -273,45 +279,34 @@ public class Pom extends Task {
 			throw new BuildException(msg, e);
 		}
 		
-		// neither property nor env-variable set to 'false' (hence "null" means do it) -> tweak pom  		
-		String candidatePropertyValue = project.getProperty(ensureCandidatePomProperty);		
-		String candidateEnvValue = System.getenv(ensureCandidatePomEnvVariable);
-		
-		boolean ensure = false;
-		if (candidatePropertyValue != null) {
-			if ("true".equals( candidatePropertyValue)) {
-				ensure = true;
-			}
-			else {
-				ensure = false;
-			}
-		}
-		else if (candidateEnvValue != null) {
-			if ("true".equals( candidateEnvValue)) {
-				ensure = true;
-			}
-			else {
-				ensure = false;
-			}
-		}
-		else {
-			ensure = true; // ? default ? 
-		}
-								
-		if (ensure) {
+		if (shouldEnsure(project)) {
 			ensureCandidatePom( artifact);
 		}
-		
-		
+
 		// expose artifact groupId, artifactId, version
-		getProject().setProperty( id + ".groupId", artifact.getGroupId());
-		getProject().setProperty( id + ".artifactId", artifact.getArtifactId());
-		getProject().setProperty( id + ".version", artifact.getVersion().asString());
+		project.setProperty( id + ".groupId", artifact.getGroupId());
+		project.setProperty( id + ".artifactId", artifact.getArtifactId());
+		project.setProperty( id + ".version", artifact.getVersion().asString());
 		
 		// export all properties
 		for (Map.Entry<String,String> entry : artifact.getProperties().entrySet()) {								
-			getProject().setProperty( id + ".properties." + entry.getKey(), entry.getValue());			
-		}							
+			project.setProperty( id + ".properties." + entry.getKey(), entry.getValue());
+		}
+
+		writeLicenseCommentIfPresent();
+	}
+
+	private boolean shouldEnsure(Project project) {
+		String candidatePropertyValue = project.getProperty(ensureCandidatePomProperty);
+		if (candidatePropertyValue != null)
+			return "true".equals(candidatePropertyValue);
+
+		String candidateEnvValue = System.getenv(ensureCandidatePomEnvVariable);
+		if (candidateEnvValue != null)
+			return "true".equals(candidateEnvValue);
+
+		// neither property nor env-variable set to 'false' (hence "null" means do it) -> tweak pom
+		return true; // ? default ?
 	}
 	
 	/**
@@ -336,5 +331,29 @@ public class Pom extends Task {
 			log.error(msg);
 			throw new BuildException( msg);
 		}		
+	}
+
+	private void writeLicenseCommentIfPresent() {
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(file);
+
+			NodeList nodeList = doc.getChildNodes();
+			for (int i = 0; i < nodeList.getLength(); i++) {
+				Node currentNode = nodeList.item(i);
+
+				if (currentNode.getNodeType() == Node.COMMENT_NODE) {
+					String comment = currentNode.getNodeValue();
+					if (comment.toLowerCase().contains("license")) {
+						getProject().setProperty(id + ".license.comment", comment);
+						return;
+					}
+				}
+			}
+
+		} catch (Exception e) {
+			throw new BuildException("Error while reading pom.xml.", e);
+		}
 	}
 }
