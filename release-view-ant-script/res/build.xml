@@ -29,7 +29,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 	</target>
 
 	<target name="install" depends="dist">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom refid="pom.project"/>
 			<attach file="dist/${versionedName}-repositoryview.yaml" type="repositoryview:yaml" />
 			<attach file="release-notes.md" type="notes:md" skipIfNoFile="true" />
