@@ -1,0 +1,119 @@
+<!--
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library; See http://www.gnu.org/licenses/.
+--><project xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+
+	<property location="src" name="src"/>
+	<property location="build" name="build"/>
+	<property location="dist" name="dist"/>
+
+	<target depends="common-init" name="init">
+		<bt:pom file="pom.xml" id="maven.project"/>
+		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile">
+			<pom refid="maven.project"/>
+		</bt:dependencies>
+		<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime" solutionListStringProperty="runtime.solutions">
+			<pom refid="maven.project"/>
+		</bt:dependencies>
+		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
+		<!-- Create time stamp -->
+		<tstamp/>
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}"/>
+	</target>
+
+	<target depends="init" description="compile the source " name="compile">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="true" debuglevel="lines,source,vars" destdir="${build}" encoding="UTF-8" source="1.8" srcdir="${src}" target="1.8">
+			<include name="**/*.java"/>
+			<classpath refid="compile.classpath"/>
+		</javac>
+		<copy todir="${build}">
+			<fileset dir="${src}">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+	</target>
+
+	<target depends="clean,compile, dist-jar-license" description="generate the distribution" name="dist">
+		<mkdir dir="${dist}/application/lib"/>
+		<jar jarfile="${dist}/application/lib/${versionedName}.jar">
+			<fileset dir="${build}"/>
+		</jar>
+		<jar basedir="${src}" jarfile="${dist}/${versionedName}-sources.jar"/>
+
+		<propertyregex property="packagedSolutions" input="${runtime.solutions}" regexp="," replace="&#10;" global="true" />
+		<echo message="${maven.project.groupId}:${maven.project.artifactId}#${maven.project.version}&#10;" file="${dist}/application/packaged-solutions.txt"/>
+		<echo append="true" message="${packagedSolutions}" file="${dist}/application/packaged-solutions.txt"/>
+		<copy todir="${dist}/application/lib">
+			<resources refid="runtime.fileset"/>
+			<mapper type="flatten"/>
+		</copy>
+
+		<fileset id="final-cp" dir="${dist}/application/lib"/>
+		<pathconvert property="manifest-cp" refid="final-cp" pathsep=" ">
+			<chainedmapper>
+				<mapper type="flatten"/>
+				<filtermapper>
+					<replacestring from=" " to="%20"/>
+				</filtermapper>
+			</chainedmapper>
+		</pathconvert>
+		<jar destfile="${dist}/application/lib/launch.jar">
+			<manifest>
+				<attribute name="Main-Class" value="hiconic.rx.platform.RxPlatform"/>
+				<attribute name="Class-Path" value="${manifest-cp}"/>
+			</manifest>
+		</jar>
+
+
+		<copy todir="${dist}/application/bin">
+			<fileset dir="launch"/>
+		</copy>
+		<copy todir="${dist}/application/conf">
+			<fileset dir="conf"/>
+		</copy>
+
+		<chmod file="${dist}/application/bin/*" perm="754"/>
+		
+	</target>
+
+	<target depends="dist" name="assemble">
+		<zip destfile="${dist}/${versionedName}.zip">
+			<zipfileset dir="${dist}/application" filemode="754">
+			  <and>
+    		   <!--  for performance -->
+			   <not><filename name="**/*.jar"/></not>
+			   <containsregexp expression="^#!\s*\/bin\/(ba)?sh"/>
+			  </and>
+			</zipfileset>
+			<zipfileset dir="${dist}/application">
+				<or>
+     			   <!--  for performance -->
+     			   <filename name="**/*.jar"/>
+   			       <not><containsregexp expression="^#!\s*\/bin\/(ba)?sh"/></not>
+				</or>
+			</zipfileset>
+		</zip>
+	</target>
+
+	<target depends="assemble" description="install to local maven repository" name="install">
+		<bt:install file="${dist}/application/lib/${versionedName}.jar">
+			<pom refid="maven.project"/>
+			<attach file="dist/${versionedName}.zip" type="application:zip"/>
+			<attach file="${dist}/${versionedName}-sources.jar" classifier="sources" />
+		</bt:install>
+	</target>
+
+	<target description="clean up" name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${dist}"/>
+	</target>
+</project>
