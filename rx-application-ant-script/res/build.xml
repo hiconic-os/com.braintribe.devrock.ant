@@ -31,7 +31,10 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<target depends="init" description="compile the source " name="compile">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac debug="true" debuglevel="lines,source,vars" destdir="${build}" encoding="UTF-8" source="1.8" srcdir="${src}" target="1.8">
+		<javac debug="true" debuglevel="lines,source,vars" encoding="UTF-8" srcdir="${src}" destdir="${build}"
+			source="${pom.project.properties.java.version.normalized}"
+			target="${pom.project.properties.java.version.normalized}">
+
 			<include name="**/*.java"/>
 			<classpath refid="compile.classpath"/>
 		</javac>
@@ -73,7 +76,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 			</manifest>
 		</jar>
 
-
 		<copy todir="${dist}/application/bin">
 			<fileset dir="launch"/>
 		</copy>
@@ -82,7 +84,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</copy>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
-		
 	</target>
 
 	<target depends="dist" name="assemble">
