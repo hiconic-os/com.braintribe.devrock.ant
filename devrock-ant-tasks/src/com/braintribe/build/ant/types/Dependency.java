@@ -28,6 +28,8 @@ public class Dependency {
 	private String artifactId;
 	private String version;
 	private String scope;
+	private String classifier;
+	private String type;
 	private String exclusions;
 	
 	public String getGroupId() {
@@ -48,8 +50,11 @@ public class Dependency {
 	public void setVersion(String version) {
 		this.version = version;
 	}
-	public String getExclusions() {
-		return exclusions;
+	public void setClassifier(String classifier) {
+		this.classifier = classifier;
+	}
+	public void setType(String type) {
+		this.type = type;
 	}
 	public void setExclusions(String exclusions) {
 		this.exclusions = exclusions;
@@ -84,6 +89,12 @@ public class Dependency {
 	
 	public CompiledDependency asCompiledDependency() {
 		CompiledDependency result = CompiledDependency.create(getGroupId(), getArtifactId(), VersionExpression.parse(getVersion()), getScope());
+
+		if (classifier != null)
+			result.setClassifier(classifier);
+
+		if (type != null)
+			result.setType(type);
 
 		if (exclusions != null)
 			for (String excludedArtifact : exclusions.split(","))
