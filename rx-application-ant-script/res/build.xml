@@ -31,6 +31,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<target depends="init" description="compile the source " name="compile">
 		<!-- Compile the java code from ${src} into ${build} -->
+		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
 		<javac debug="true" debuglevel="lines,source,vars" encoding="UTF-8" srcdir="${src}" destdir="${build}"
 			source="${pom.project.properties.java.version.normalized}"
 			target="${pom.project.properties.java.version.normalized}">
