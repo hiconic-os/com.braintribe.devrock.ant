@@ -47,6 +47,16 @@ You should have received a copy of the GNU Lesser General Public License along w
 	</target>
 
 	<target depends="clean,compile, dist-jar-license" description="generate the distribution" name="dist">
+		<bt:dependencies>
+			<dependency groupId="hiconic.platform.reflex" artifactId="reflex-app-resources" version="[1.0,1.1)" scope="runtime"
+				classifier="resources" type="zip"/>
+			<FileSetTarget id="app.fileset" type="resources:zip"/>
+		</bt:dependencies>
+
+		<unzip dest="${dist}/application">
+			<resources refid="app.fileset"/>
+		</unzip>
+
 		<mkdir dir="${dist}/application/lib"/>
 		<jar jarfile="${dist}/application/lib/${versionedName}.jar">
 			<fileset dir="${build}"/>
@@ -77,12 +87,14 @@ You should have received a copy of the GNU Lesser General Public License along w
 			</manifest>
 		</jar>
 
-		<copy todir="${dist}/application/bin">
-			<fileset dir="launch"/>
-		</copy>
-		<copy todir="${dist}/application/conf">
-			<fileset dir="conf"/>
-		</copy>
+		<if>
+			<available file="resources" type="dir"/>
+			<then>
+				<copy todir="${dist}/application" override="true">
+					<fileset dir="resources"/>
+				</copy>
+			</then>
+		</if>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
 	</target>
