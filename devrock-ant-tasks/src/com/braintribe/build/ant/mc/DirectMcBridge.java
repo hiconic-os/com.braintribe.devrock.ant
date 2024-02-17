@@ -538,8 +538,24 @@ public class DirectMcBridge implements McBridge {
 		}
 		
 		// resolve clashes
-		List<DependencyClash> dependencyClashes = ClashResolver.resolve(dependencies, ClashResolvingStrategy.highestVersion);
-		resolution.setClashes(dependencyClashes);
+		// TODO : review 
+		Maybe<List<DependencyClash>> dependencyClashesMaybe = ClashResolver.resolve(dependencies, ClashResolvingStrategy.highestVersion);
+		if (dependencyClashesMaybe.isSatisfied()) {
+			resolution.setClashes(dependencyClashesMaybe.get());		
+		}
+		else {
+			if (dependencyClashesMaybe.hasValue()) {
+				resolution.setClashes(dependencyClashesMaybe.value());				
+			}
+			Reason resolutionFailureReason = resolution.getFailure();
+			if (resolutionFailureReason == null) {
+				resolution.setFailure( dependencyClashesMaybe.whyUnsatisfied());
+			}
+			else {
+				resolutionFailureReason.getReasons().add( dependencyClashesMaybe.whyUnsatisfied());
+			}
+		}
+		
 		
 		AnalysisArtifactResolutionPreparation analysisArtifactResolutionPreparation = new AnalysisArtifactResolutionPreparation(resolution, solutionSortingComparator, (s) -> true);
 		analysisArtifactResolutionPreparation.process();
