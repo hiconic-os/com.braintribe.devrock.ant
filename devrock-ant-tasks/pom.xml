@@ -16,7 +16,7 @@ You should have received a copy of the GNU Lesser General Public License along w
         <version>[1.0,1.1)</version>
     </parent>
     <artifactId>devrock-ant-tasks</artifactId>
-    <version>1.0.450</version>
+    <version>1.0.451</version>
     <licenses>
         <license>
             <name>GNU Lesser General Public License v3.0</name>

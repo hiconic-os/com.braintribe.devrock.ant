@@ -16,7 +16,7 @@ You should have received a copy of the GNU Lesser General Public License along w
         <version>[1.0,1.1)</version>
     </parent>
     <artifactId>repository-view-ant-script</artifactId>
-    <version>1.0.18</version>
+    <version>1.0.19</version>
     <packaging>pom</packaging>
     <properties>
         <codebase>braintribe-dev</codebase>
