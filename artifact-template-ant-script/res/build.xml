@@ -20,7 +20,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 	</target>
 
 	<target name="install" depends="dist">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom file="pom.xml" id="project" />
 			<attach file="dist/archive.zip" type="archive:zip" />
 		</bt:install>
