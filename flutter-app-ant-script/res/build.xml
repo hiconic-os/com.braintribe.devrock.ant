@@ -20,7 +20,7 @@
 	</target>
 
 	<target name="install" depends="dist" unless="${js.installation.disabled}">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom refid="pom.project"/>
 			<attach file="dist/${versionedName}.js.zip" type="js.zip"/>
 		</bt:install>

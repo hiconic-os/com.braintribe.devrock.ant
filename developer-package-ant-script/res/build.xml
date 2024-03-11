@@ -97,7 +97,7 @@
 	</target>
 
 	<target name="install" depends="assemble" description="install to local maven repository">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom refid="pom.project"/>
 			<attach file="dist/${versionedName}.zip" type=":zip"/>
 		</bt:install>

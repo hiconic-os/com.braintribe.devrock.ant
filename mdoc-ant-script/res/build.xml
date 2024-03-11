@@ -31,7 +31,7 @@
     </target>
 
     <target depends="assemble" name="install">
-        <bt:install file="pom.xml">
+        <bt:install>
             <pom refid="pom.project"/>
             <attach file="asset.man" type="asset:man"/>
 			<attach file="${mdocLocation}" type="mdoc:zip"/>
