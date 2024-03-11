@@ -69,7 +69,7 @@
 	</target>
 
 	<target name="install" depends="dist">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom file="pom.xml" id="project"/>
 			<attach file="asset.man" type="asset:man"/>
 			<attach file="dist/runtime.zip" type="runtime:zip"/>

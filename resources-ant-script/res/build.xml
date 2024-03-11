@@ -13,18 +13,18 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="resources-ant-script">
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
-	
+
 	<target name="clean">
 		<delete dir="dist"/>
 	</target>
-	
+
     <target name="dist" depends="clean">
     	<mkdir dir="dist"/>
     	<zip destfile="dist/resources.zip" basedir="resources" excludes="**/.gitignore"/>
 	</target>
-	
+
     <target name="install" depends="dist">
-        <bt:install file="pom.xml">
+        <bt:install>
             <pom file="pom.xml" id="project"/>
             <attach file="asset.man" type="asset:man"/>
             <attach file="dist/resources.zip" type="resources:zip"/>

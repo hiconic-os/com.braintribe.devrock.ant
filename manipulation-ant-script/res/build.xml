@@ -15,7 +15,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
 
 	<target name="install">
-		<bt:install file="pom.xml">
+		<bt:install>
 			<pom file="pom.xml" id="project" />
 			<attach file="asset.man" type="asset:man" />
 			<attach file="data.man" skipIfNoFile="true" type="data:man" />
