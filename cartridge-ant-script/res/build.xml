@@ -25,7 +25,7 @@
 	<target name="compile" depends="create-packaging-info, javadoc">
 		<!-- normalize Java version: 1.8 or 8 -> 8; 1.17 or 17 -> 17 -->
 		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
-		<javac release="${pom.project.properties.java.version.normalized}" source="${pom.project.properties.java.version.normalized}" target="${pom.project.properties.java.version.normalized}" srcdir="${src}" destdir="${build}" encoding="UTF-8" debug="true" debuglevel="lines,source,vars" includeantruntime="false" verbose="${javac.verbose}">
+		<javac release="${pom.project.properties.java.version.normalized}" srcdir="${src}" destdir="${build}" encoding="UTF-8" debug="true" debuglevel="lines,source,vars" includeantruntime="false" verbose="${javac.verbose}">
 			<include name="**/*.java"/>
 			<classpath refid="compile.classpath"/>
 		</javac>
