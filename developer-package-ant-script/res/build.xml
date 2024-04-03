@@ -1,11 +1,15 @@
 <!--
- ============================================================================
- BRAINTRIBE TECHNOLOGY GMBH - www.braintribe.com
- Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022 - All Rights Reserved
- It is strictly forbidden to copy, modify, distribute or use this code without written permission
- To this file the Braintribe License Agreement applies.
- ============================================================================
---><project xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
+Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
+
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library; See http://www.gnu.org/licenses/.
+-->
+<project xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
 
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
 
@@ -45,23 +49,57 @@
 		<move file="${tools-dir}/apache-ant-${ant-version}" tofile="${ant-dir}"/>
 
 		<bt:dependencies>
-			<pom refid="pom.project"/>
+			<dependency 
+				groupId="com.braintribe.devrock.cicd" 
+				artifactId="devrock-cicd-app" 
+				version="${pom.project.properties.V.com.braintribe.devrock.cicd}" 
+				exclusions="*:*" 
+			/>
+			<FileSetTarget id="hc-build-fileset" type="application:zip"/>
+		</bt:dependencies>
+
+		<!-- deprecated -->
+		<bt:dependencies>
+			<dependency 
+				groupId="tribefire.extension.setup" 
+				artifactId="jinni" 
+				version="${pom.project.properties.V.tribefire.extension.setup}" 
+				exclusions="*:*" 
+			/>
 			<FileSetTarget id="jinni-fileset" type="application:zip"/>
 		</bt:dependencies>
 
+		<!-- deprecated -->
 		<bt:dependencies>
-			<pom refid="pom.project"/>
+			<dependency 
+				groupId="com.braintribe.devrock.ant" 
+				artifactId="devrock-ant-tasks" 
+				version="${pom.project.properties.V.com.braintribe.devrock.ant}" 
+				exclusions="*:*" 
+			/>
 			<FileSetTarget id="devrock-ant-tasks-fileset" type="libs:zip"/>
 		</bt:dependencies>
 
-		<property name="jinni-dir" location="${tools-dir}/jinni"/>
-		<property name="ant-libs-dir" location="${tools-dir}/ant-libs"/>
+		<property name="hc-build-dir" location="${tools-dir}/hc-build"/>
 
-		<mkdir dir="${jinni-dir}"/>
-		<mkdir dir="${ant-libs-dir}"/>
+		<!-- deprecated --><property name="jinni-dir" location="${tools-dir}/jinni"/>
+		<!-- deprecated --><property name="ant-libs-dir" location="${tools-dir}/ant-libs"/>
+
+		<mkdir dir="${hc-build-dir}"/>
+		
+		<!-- deprecated --><mkdir dir="${jinni-dir}"/>
+		<!-- deprecated --><mkdir dir="${ant-libs-dir}"/>
+		
+		<unzip dest="${hc-build-dir}">
+			<resources refid="hc-build-fileset"/>
+		</unzip>
+
+		<!-- deprecated -->
 		<unzip dest="${jinni-dir}">
 			<resources refid="jinni-fileset"/>
 		</unzip>
+
+		<!-- deprecated -->
 		<unzip dest="${ant-libs-dir}">
 			<resources refid="devrock-ant-tasks-fileset"/>
 		</unzip>
