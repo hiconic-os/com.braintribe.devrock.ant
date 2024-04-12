@@ -136,13 +136,13 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 			<path refid="unittests.testsClasspath"/>
 			<!-- ... and then we add some additional libs which are needed for JUnit execution from Ant and logging. -->
 			<path id="unittest.extensions.libs">
-				<fileset dir="${ant.custom.library.dir}" includes="bt.ant-junit-extensions-*.jar" />
-				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-jul-extensions-*.jar" />
-				<fileset dir="${ant.custom.library.dir}" includes="bt.logging-ndc-*.jar" />
+				<!-- '*' to still support optional "bt." prefix -->
+				<fileset dir="${ant.custom.library.dir}" includes="*ant-junit-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="*logging-jul-extensions-*.jar" />
+				<fileset dir="${ant.custom.library.dir}" includes="*logging-ndc-*.jar" />
 			</path>
 			<pathelement location="${ant.library.dir}/ant.jar"/>
 			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
-			<pathelement location="${ant.library.dir}/ant-junit4.jar"/>
 		</path>
 
 		<pathconvert property="unittests.testsExecutionClasspathAsString" refid="unittests.testsExecutionClasspath"/>
