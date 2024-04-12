@@ -63,7 +63,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<property name="unittests.testClasses.includeRegex" value=".*"/>
 		<property name="unittests.testClasses.excludeRegex" value=""/>
 		<property name="unittests.measureTestCoverage" value="false" />
-		<property name="unittests.haltOnFailure" value="false" />
+		<property name="unittests.haltOnFailure" value="true" />
 		<property name="unittests.showoutput" value="false" />
 
 		<delete dir="${unittests.artifact.reportsDir}"/>
@@ -144,7 +144,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
 			<pathelement location="${ant.library.dir}/ant-junit4.jar"/>
 		</path>
-		
+
 		<pathconvert property="unittests.testsExecutionClasspathAsString" refid="unittests.testsExecutionClasspath"/>
 
 		<!-- ********************* -->
