@@ -59,7 +59,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<property name="integrationtests.excludedCategories" value=""/>
 		<property name="integrationtests.testClasses.includeRegex" value=".*"/>
 		<property name="integrationtests.testClasses.excludeRegex" value=""/>
-		<property name="integrationtests.haltOnFailure" value="true" />
+		<property name="integrationtests.haltOnFailure" value="false" />
 		<property name="integrationtests.showoutput" value="false" />
 
 		<delete dir="${integrationtests.artifact.reportsDir}"/>
@@ -326,6 +326,15 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 
 				<echo message="Done running tests."/>
 
+			</else>
+		</if>
+		<if>
+			<isset property="integrationtests.errorOccurred"/>
+			<then>
+				<fail message="At least one test failed. Stopping build."/>
+			</then>
+			<else>
+				<echo message="All tests were successful."/>
 			</else>
 		</if>
 	</target>

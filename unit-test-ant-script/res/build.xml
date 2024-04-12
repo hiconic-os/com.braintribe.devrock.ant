@@ -63,7 +63,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<property name="unittests.testClasses.includeRegex" value=".*"/>
 		<property name="unittests.testClasses.excludeRegex" value=""/>
 		<property name="unittests.measureTestCoverage" value="false" />
-		<property name="unittests.haltOnFailure" value="true" />
+		<property name="unittests.haltOnFailure" value="false" />
 		<property name="unittests.showoutput" value="false" />
 
 		<delete dir="${unittests.artifact.reportsDir}"/>
@@ -421,6 +421,15 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 						<echo message="Done creating code coverage report."/>
 					</then>
 				</if>
+			</else>
+		</if>
+		<if>
+			<isset property="unittests.errorOccurred"/>
+			<then>
+				<fail message="At least one test failed. Stopping build."/>
+			</then>
+			<else>
+				<echo message="All tests were successful."/>
 			</else>
 		</if>
 	</target>
