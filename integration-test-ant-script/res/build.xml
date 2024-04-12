@@ -125,6 +125,12 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 			</then>
 		</if>
 
+		<bt:dependencies pathId="ant.junit.path" useScope="runtime">
+            <dependency groupId="org.apache.ant" artifactId="ant" version="1.10.14"/>
+            <dependency groupId="org.apache.ant" artifactId="ant-junit" version="1.10.14"/>
+            <dependency groupId="org.apache.ant" artifactId="ant-junit4" version="1.10.14"/>
+        </bt:dependencies>
+
 		<!-- Get tests execution classpath (this also includes Ant JUnit libs + custom extensions). -->
 		<path id="integrationtests.testsExecutionClasspath">
 			<!-- first we add our tests classpath (derived from pom) ... -->
@@ -136,10 +142,8 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 				<fileset dir="${ant.custom.library.dir}" includes="*logging-jul-extensions-*.jar" />
 				<fileset dir="${ant.custom.library.dir}" includes="*logging-ndc-*.jar" />
 			</path>
-			<pathelement location="${ant.library.dir}/ant.jar"/>
-			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
-			<pathelement location="${ant.library.dir}/ant-1.10.14.jar"/>
-			<pathelement location="${ant.library.dir}/ant-junit-1.10.14.jar"/>
+
+			<path refid="ant.junit.path"/>
 		</path>
 
 		<pathconvert property="integrationtests.testsExecutionClasspathAsString" refid="integrationtests.testsExecutionClasspath"/>
