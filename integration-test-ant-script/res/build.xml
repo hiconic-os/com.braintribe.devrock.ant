@@ -138,6 +138,8 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 			</path>
 			<pathelement location="${ant.library.dir}/ant.jar"/>
 			<pathelement location="${ant.library.dir}/ant-junit.jar"/>
+			<pathelement location="${ant.library.dir}/ant-1.10.14.jar"/>
+			<pathelement location="${ant.library.dir}/ant-junit-1.10.14.jar"/>
 		</path>
 
 		<pathconvert property="integrationtests.testsExecutionClasspathAsString" refid="integrationtests.testsExecutionClasspath"/>
