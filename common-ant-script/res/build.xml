@@ -27,12 +27,11 @@ You should have received a copy of the GNU Lesser General Public License along w
 	</target>
 	<target name="init" depends="common-init" />
 	<target name="generate-artifact-reflection" depends="init" if="${devrock.ant.feature.artifact-reflection-generation}">
-		<property name="ar-build-dir" value="${build}"/>
-		<bt:generate-artifact-reflection buildDir="${ar-build-dir}">
+		<bt:generate-artifact-reflection buildDir="${build}">
 			<pom refid="pom.project" />
 		</bt:generate-artifact-reflection>
 	</target>
-	<target name="common-init">
+	<target name="common-init" depends="clean">
 		<!-- "generateXyz" can be specified directly, inherited from "generateOptionals" (if
 			that was specified) or has a default value -->
 		<if>
@@ -71,10 +70,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 			useScope="compile">
 			<pom refid="pom.project" />
 		</bt:dependencies>
-	</target>
-	<target name="update-classpath" depends="download-deps">
-		<bt:update-classpath fileSetId="compile.fileset" sourceFileSetId="compile.sources.fileset"
-			sourcesNeeded="true" />
 	</target>
 	<target name="publish" depends="common-init">
 		<property name="increaseVersion" value="true" />
@@ -243,9 +238,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 	<!-- Although we overwrite install, we must provide an empty dist target because the
 		install from common-ant-script depends on dist-->
 	<target name="dist" depends="init"/>
-	<target name="javadoc" depends="common-init">
-		<!-- This is needed in the compile task. Therefor it is properly not placed inside
-			the if statement. -->
+	<target name="javadoc" depends="generate-artifact-reflection">
+		<!-- This is needed in the compile task. Therefor it is properly not placed inside the if statement. -->
 		<bt:dependencies pathId="compile.classpath" filesetId="compile.fileset" useScope="compile">
 			<pom refid="pom.project"/>
 		</bt:dependencies>
@@ -267,8 +261,12 @@ You should have received a copy of the GNU Lesser General Public License along w
 						</tstamp>
 						<!-- normalize Java version: 1.8 or 8 -> 8; 1.17 or 17 -> 17 -->
 						<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
+						<path id="javadoc.classpath">
+							<path refid="compile.classpath"/>
+							<pathelement location="${build}"/> <!-- Includes artifact-reflection .class files -->
+						</path>
 						<javadoc access="protected" additionalparam="-Xdoclint:none -quiet" author="false"
-							charset="UTF-8" classpathref="compile.classpath" destdir="${dist}/javadoc"
+							charset="UTF-8" classpathref="javadoc.classpath" destdir="${dist}/javadoc"
 							docencoding="UTF-8" encoding="UTF-8" excludepackagenames=" " failonerror="false"
 							failonwarning="false" includenosourcepackages="true" linksource="false" locale="en_US"
 							maxmemory="3G" nodeprecated="false" nodeprecatedlist="false" nohelp="false"
