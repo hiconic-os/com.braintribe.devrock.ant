@@ -30,7 +30,7 @@
 
 	<target depends="init" description="compile the source " name="compile">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac debug="true" debuglevel="lines,source,vars" destdir="${build}" encoding="UTF-8" source="1.8" srcdir="${src}" target="1.8">
+		<javac debug="true" debuglevel="lines,source,vars" srcdir="${src}" destdir="${build}" encoding="UTF-8">
 			<include name="**/*.java"/>
 			<classpath refid="compile.classpath"/>
 		</javac>
