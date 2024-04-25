@@ -126,8 +126,4 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</bt:install>
 	</target>
 
-	<target description="clean up" name="clean">
-		<delete dir="${build}"/>
-		<delete dir="${dist}"/>
-	</target>
 </project>
