@@ -63,6 +63,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<property name="unittests.testClasses.includeRegex" value=".*"/>
 		<property name="unittests.testClasses.excludeRegex" value=""/>
 		<property name="unittests.measureTestCoverage" value="false" />
+		<property name="unittests.failOnFailure" value="true" />
 		<property name="unittests.haltOnFailure" value="false" />
 		<property name="unittests.showoutput" value="false" />
 
@@ -432,10 +433,16 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<if>
 			<isset property="unittests.errorOccurred"/>
 			<then>
-				<fail message="At least one test failed. Stopping build."/>
+				<echo message="At least one unit test failed."/>
+				<if>
+					<istrue value="${unittests.failOnFailure}"/>
+					<then>
+						<fail message="Stopping build after unit test failures."/>
+					</then>
+				</if>
 			</then>
 			<else>
-				<echo message="All tests were successful."/>
+				<echo message="All unit tests were successful."/>
 			</else>
 		</if>
 	</target>
