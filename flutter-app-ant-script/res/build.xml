@@ -8,9 +8,14 @@
 
 	<target name="compile" depends="init">
 		<exec executable="flutter" failonerror="true">
+			<arg value="pub"/>
+			<arg value="get"/>
+		</exec>
+		<exec executable="flutter" failonerror="true">
 			<arg value="build"/>
 			<arg value="web"/>
-			<arg value="--source-maps"/>
+			<arg value="--web-renderer"/>
+			<arg value="canvaskit"/>
 		</exec>
 	</target>
 
@@ -20,7 +25,7 @@
 	</target>
 
 	<target name="install" depends="dist" unless="${js.installation.disabled}">
-		<bt:install>
+		<bt:install file="pom.xml">
 			<pom refid="pom.project"/>
 			<attach file="dist/${versionedName}.js.zip" type="js.zip"/>
 		</bt:install>
