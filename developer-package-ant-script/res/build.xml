@@ -51,7 +51,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<bt:dependencies>
 			<dependency 
 				groupId="com.braintribe.devrock.cicd" 
-				artifactId="devrock-cicd-app" 
+				artifactId="hc-build-app" 
 				version="${pom.project.properties.V.com.braintribe.devrock.cicd}" 
 				exclusions="*:*" 
 			/>
