@@ -8,11 +8,12 @@
 package com.braintribe.build.ant.tasks.typescript;
 
 import static com.braintribe.model.typescript.TypeScriptWriterHelper.createCustomGmTypeFilter;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.extractGmTypes;
 import static com.braintribe.utils.lcd.CollectionTools2.asSet;
-import static com.braintribe.utils.lcd.CollectionTools2.newSet;
+import static com.braintribe.utils.lcd.CollectionTools2.newList;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.partitioningBy;
 
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 
 import com.braintribe.build.ant.utils.DrAntTools;
@@ -38,8 +40,10 @@ import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
 import com.braintribe.model.artifact.analysis.AnalysisDependency;
 import com.braintribe.model.artifact.essential.ArtifactIdentification;
 import com.braintribe.model.artifact.essential.VersionedArtifactIdentification;
-import com.braintribe.model.meta.GmMetaModel;
+import com.braintribe.model.generic.mdec.ModelDeclaration;
+import com.braintribe.model.jvm.reflection.ModelDeclarationParser;
 import com.braintribe.model.meta.GmType;
+import com.braintribe.model.processing.itw.analysis.JavaTypeAnalysis;
 import com.braintribe.model.typescript.ModelEnsuringContext;
 import com.braintribe.model.typescript.ModelEnsuringDTsWriter;
 import com.braintribe.model.typescript.ModelEnsuringJsWriter;
@@ -107,10 +111,12 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		private final String aId = currentArtifact.getArtifactId();
 		private final String version = currentArtifact.getVersion();
 
-		private List<Class<?>> gmClasses;
-		private List<GmType> gmTypes;
 		private List<Class<?>> regularClasses;
-		private GmMetaModel maybeCurrentModel;
+		private List<Class<?>> gmClasses;
+		private List<Class<?>> gmClassesForwarded;
+		private List<GmType> gmTypesDeclared;
+		private List<GmType> gmTypesForwarded;
+		private List<GmType> gmTypesAll;
 
 		private String problemMsg;
 
@@ -136,7 +142,7 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 
 			writeClassAndModelsDTs();
 
-			if (maybeCurrentModel != null)
+			if (isCurrentArtifactModel())
 				writeModelEnsuringJsAndDTsIfRelevant();
 		}
 
@@ -158,18 +164,27 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		}
 
 		private void analyzeClasses() {
+			JavaTypeAnalysis jta = new JavaTypeAnalysis();
+			jta.setClassLoader(classLoader);
+			jta.setRequireEnumBase(rootModelMajor() >= 2);
+
 			Map<Boolean, List<Class<?>>> classes = gmAndRegularClasses();
 
-			gmClasses = classes.get(TRUE);
 			regularClasses = classes.get(FALSE);
-			gmTypes = extractGmTypes(gmClasses, classLoader, rootModelMajor());
-			maybeCurrentModel = resolveCurentModel();
+			gmClasses = classes.get(TRUE);
+			gmClassesForwarded = findForwardedGmClasses();
+			gmTypesDeclared = extractGmTypes(jta, gmClasses);
+			gmTypesForwarded = extractGmTypes(jta, gmClassesForwarded);
+			gmTypesAll = allGmTypes();
+
+			if (!regularClasses.isEmpty())
+				log("Regular classes found: " + regularClasses.size());
 
 			if (!gmClasses.isEmpty())
 				log("Model classes found: " + gmClasses.size());
 
-			if (!regularClasses.isEmpty())
-				log("Regular classes found: " + regularClasses.size());
+			if (!gmClasses.isEmpty())
+				log("Model classes (forwarded) found: " + gmClassesForwarded.size());
 		}
 
 		private int rootModelMajor() {
@@ -180,16 +195,40 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 					.orElse(1);
 		}
 
-		private GmMetaModel resolveCurentModel() {
-			if (!isCurrentArtifactModel())
-				return null;
+		private List<Class<?>> findForwardedGmClasses() {
+			if (!isMarkedAsModel(currentArtifact))
+				return emptyList();
 
-			GmMetaModel result = GmMetaModel.T.create();
-			result.setTypes(newSet(gmTypes));
+			Set<String> declaredTypeSignatures = readTypeSignaturesFromModelDeclarationXml();
+			for (Class<?> clazz : gmClasses)
+				declaredTypeSignatures.remove(clazz.getName());
 
-			for (GmType gmType : gmTypes)
-				gmType.setDeclaringModel(result);
+			return declaredTypeSignatures.stream() //
+					.map(this::toClassIfPossible) //
+					.filter(c -> c != null) //
+					.collect(Collectors.toList());
+		}
 
+		private Set<String> readTypeSignaturesFromModelDeclarationXml() {
+			File file = new File(buildFolder, "model-declaration.xml");
+			if (!file.exists()) {
+				log("Will not include forwarded types, model-declaration.xml not found: " + file.getAbsolutePath(), Project.MSG_WARN);
+				return emptySet();
+			}
+
+			ModelDeclaration modelDeclaration = FileTools.read(file).fromInputStream(ModelDeclarationParser::parse);
+			return modelDeclaration.getTypes();
+		}
+
+		private static List<GmType> extractGmTypes(JavaTypeAnalysis jta, List<Class<?>> classes) {
+			return classes.stream() //
+					.map(jta::getGmTypeUnchecked) //
+					.collect(Collectors.toList());
+		}
+
+		private List<GmType> allGmTypes() {
+			List<GmType> result = newList(gmTypesDeclared);
+			result.addAll(gmTypesForwarded);
 			return result;
 		}
 
@@ -202,8 +241,10 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		}
 
 		private void writeClassAndModelsDTs(Writer writer) throws IOException {
+			List<GmType> allGmTypes = allGmTypes();
+
 			TypeScriptWriterHelper.writeTripleSlashReferences(getDependencies(false), writer);
-			TypeScriptWriterForModels.write(gmTypes, jsNameResolver, writer);
+			TypeScriptWriterForModels.write(allGmTypes, jsNameResolver, writer);
 			TypeScriptWriterForClasses.write(regularClasses, customGmTypeFilter, writer);
 		}
 
@@ -252,7 +293,7 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		}
 
 		private void writeModelEnsuringJsAndDTsIfRelevant() {
-			ModelEnsuringContext meContext = ModelEnsuringContext.create(gmTypes, gId, aId, version, getDependencies(true));
+			ModelEnsuringContext meContext = ModelEnsuringContext.create(gmTypesAll, gId, aId, version, getDependencies(true));
 
 			FileTools.write(outFile(meContext.dtsFileName())).usingWriter(writer -> ModelEnsuringDTsWriter.writeDts(meContext, writer));
 			FileTools.write(outFile(meContext.jsFileName())).usingWriter(writer -> ModelEnsuringJsWriter.writeJs(meContext, writer));
