@@ -241,10 +241,8 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		}
 
 		private void writeClassAndModelsDTs(Writer writer) throws IOException {
-			List<GmType> allGmTypes = allGmTypes();
-
 			TypeScriptWriterHelper.writeTripleSlashReferences(getDependencies(false), writer);
-			TypeScriptWriterForModels.write(allGmTypes, jsNameResolver, writer);
+			TypeScriptWriterForModels.write(gmTypesDeclared, jsNameResolver, writer);
 			TypeScriptWriterForClasses.write(regularClasses, customGmTypeFilter, writer);
 		}
 
