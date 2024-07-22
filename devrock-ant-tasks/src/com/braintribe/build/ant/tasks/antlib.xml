@@ -59,6 +59,7 @@
 	<taskdef name="indexRes" classname="com.braintribe.build.ant.tasks.IndexResourcesTask"/>
 	<taskdef name="determineProcessingDataInsightFolder" classname="com.braintribe.build.ant.tasks.DetermineProcessingDataInsightFolder" />
 	<taskdef name="buildReleaseView" classname="com.braintribe.build.ant.tasks.BuildReleaseViewTask" />
+	<taskdef name="generateCopyrightNotice" classname="com.braintribe.build.ant.tasks.GenerateCopyrightNotice" />
 	
 	<!-- JUnit -->
 	<taskdef name="findJunitTests" classname="com.braintribe.build.ant.tasks.unittests.FindJUnitTestsTask" />

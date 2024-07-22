@@ -35,6 +35,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 		<property name="jinni-dir" location="${tools-dir}/jinni"/>
 		<mkdir dir="${jinni-dir}"/>
+
+		<property name="shared-lib-dir" location="${tools-dir}/shared-lib"/>
+		<mkdir dir="${shared-lib-dir}"/>
 		
 		<bt:dependencies>
 			<dependency 
@@ -56,12 +59,36 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<FileSetTarget id="jinni-fileset" type="application:zip"/>
 		</bt:dependencies>
 
+		<patternset id="libs-excluded">
+			<exclude name="lib/**"/>
+		</patternset>
+		<patternset id="libs-only">
+			<include name="lib/**"/>
+		</patternset>
+
+		<!-- Unzip apps without libraries -->
 		<unzip dest="${hc-build-dir}">
 			<resources refid="hc-build-fileset"/>
+			<patternset refid="libs-excluded"/>
 		</unzip>
 
 		<unzip dest="${jinni-dir}">
 			<resources refid="jinni-fileset"/>
+			<patternset refid="libs-excluded"/>
+		</unzip>
+
+		<!-- Unzip libraries of all apps into shared-lib -->
+		<unzip dest="${shared-lib-dir}">
+			<resources refid="hc-build-fileset"/>
+			<patternset refid="libs-only"/>
+			<mapper><globmapper from="lib/*" to="*"/></mapper>
+		</unzip>
+
+
+		<unzip dest="${shared-lib-dir}">
+			<resources refid="jinni-fileset"/>
+			<patternset refid="libs-only"/>
+			<mapper><globmapper from="lib/*" to="*"/></mapper>
 		</unzip>
 
 		<copy todir="${dr-dir}">

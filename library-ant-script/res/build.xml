@@ -67,6 +67,14 @@ You should have received a copy of the GNU Lesser General Public License along w
 				<exclude name="**/*.java"/>
 			</fileset>
 		</copy>
+
+		<!-- generate detailed copyright information per class -->
+		<mkdir dir="${META-INF}"/>
+		<bt:generateCopyrightNotice noticeFile="${META-INF}/NOTICE">
+			<sourceFileSet dir="${src}">
+				<include name="**/*.java"/>
+			</sourceFileSet>
+		</bt:generateCopyrightNotice>
 	</target>
 
 	<target name="make-jsinterop" depends="clean, compile">

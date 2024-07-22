@@ -80,7 +80,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 				</filtermapper>
 			</chainedmapper>
 		</pathconvert>
-		<jar destfile="${dist}/application/lib/launch.jar">
+		<property name="launch-jar" value="launch-${maven.project.artifactId}.jar"/>
+		<jar destfile="${dist}/application/lib/${launch-jar}">
 			<manifest>
 				<attribute name="Main-Class" value="hiconic.rx.platform.RxPlatform"/>
 				<attribute name="Class-Path" value="${manifest-cp}"/>
@@ -95,6 +96,9 @@ You should have received a copy of the GNU Lesser General Public License along w
 				</copy>
 			</then>
 		</if>
+
+		<replace file="${dist}/application/bin/run" token="launch.jar" value="${launch-jar}"/>
+		<replace file="${dist}/application/bin/run.bat" token="launch.jar" value="${launch-jar}"/>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
 	</target>

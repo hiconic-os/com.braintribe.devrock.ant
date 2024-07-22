@@ -221,12 +221,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<then><copy file="../COPYING.LESSER" todir="${META-INF}"/></then>
 		</if>
 		<if>
-			<available file="../LICENCE" type="file"/>
-			<then><copy file="../LICENCE" todir="${META-INF}"/></then>
-		</if>
-		<if>
-			<available file="../NOTICE" type="file"/>
-			<then><copy file="../NOTICE" todir="${META-INF}"/></then>
+			<available file="../LICENSE" type="file"/>
+			<then><copy file="../LICENSE" todir="${META-INF}"/></then>
 		</if>
 	</target>
 
