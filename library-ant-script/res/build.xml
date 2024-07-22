@@ -69,12 +69,19 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</copy>
 
 		<!-- generate detailed copyright information per class -->
-		<mkdir dir="${META-INF}"/>
-		<bt:generateCopyrightNotice noticeFile="${META-INF}/NOTICE">
-			<sourceFileSet dir="${src}">
-				<include name="**/*.java"/>
-			</sourceFileSet>
-		</bt:generateCopyrightNotice>
+		<available property="generateCopyrightNotice.exists" classname="com.braintribe.build.ant.tasks.GenerateCopyrightNotice"/>
+		<if>
+			<isset property="generateCopyrightNotice.exists"/>
+			<then>
+				<mkdir dir="${META-INF}"/>
+				<echo message="Generating Copyright NOTICE: ${META-INF}/NOTICE"/>
+				<bt:generateCopyrightNotice noticeFile="${META-INF}/NOTICE">
+					<sourceFileSet dir="${src}">
+						<include name="**/*.java"/>
+					</sourceFileSet>
+				</bt:generateCopyrightNotice>
+			</then>
+		</if>
 	</target>
 
 	<target name="make-jsinterop" depends="clean, compile">
