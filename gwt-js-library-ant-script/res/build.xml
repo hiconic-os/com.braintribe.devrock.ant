@@ -73,6 +73,7 @@
             <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)" />
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
+        <echo message="FileClassPathLoader CP: ${classloader.classpath.string}"/>
     </target>
 
     <target name="compile pretty" depends="prepare-compile-path">
