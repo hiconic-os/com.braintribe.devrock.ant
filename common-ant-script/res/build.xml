@@ -42,12 +42,14 @@ You should have received a copy of the GNU Lesser General Public License along w
 			</not>
 			<then>
 				<property name="generateJsinterop" value="true"/>
+				<property name="generateNpmPackage" value="true"/>
 			</then>
 		</if>
 		<!-- Now we set everything else to "generateOptionals" or "false" if "generateOptionals"
 			wasn't specified -->
 		<property name="generateOptionals" value="false"/>
 		<property name="generateJsinterop" value="true"/>
+		<property name="generateNpmPackage" value="true"/>
 		<property name="generateJavadoc" value="${generateOptionals}"/>
 		<bt:pom id="pom.project" file="pom.xml" />
 		<property name="versionedName" value="${pom.project.artifactId}-${pom.project.version}"/>
@@ -300,4 +302,5 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</if>
 	</target>
 	<target name="make-jsinterop" />
+	<target name="make-npm-package" />
 </project>
