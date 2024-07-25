@@ -138,12 +138,10 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 			validate();
 			analyzeClasses();
 
-			FileTools.ensureFolderExists(outputDir);
-
 			writeClassAndModelsDTs();
 
 			if (isCurrentArtifactModel())
-				writeModelEnsuringJsAndDTsIfRelevant();
+				writeModelEnsuringJsAndDTsIf();
 		}
 
 		private void validate() {
@@ -237,6 +235,8 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 		}
 
 		private void writeClassAndModelsDTs() {
+			FileTools.ensureFolderExists(outputDir);
+
 			FileTools.write(outFile(TypeScriptWriterHelper.dtsFileName(aId))).usingWriter(this::writeClassAndModelsDTs);
 		}
 
@@ -290,7 +290,7 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 			}
 		}
 
-		private void writeModelEnsuringJsAndDTsIfRelevant() {
+		private void writeModelEnsuringJsAndDTsIf() {
 			ModelEnsuringContext meContext = ModelEnsuringContext.create(gmTypesAll, gId, aId, version, getDependencies(true));
 
 			FileTools.write(outFile(meContext.dtsFileName())).usingWriter(writer -> ModelEnsuringDTsWriter.writeDts(meContext, writer));

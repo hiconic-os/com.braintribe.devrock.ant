@@ -23,7 +23,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 					<istrue value="${generateJsinterop}" />
 				</and>
 				<and>
-					<isset property="${pom.project.properties.npmPackaging}" />
+					<isset property="pom.project.properties.npmPackaging" />
 					<istrue value="${generateNpmPackage}" />
 				</and>
 			</or>
@@ -105,9 +105,24 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</if>
 	</target>
 
+	<target name="make-npm-package" depends="clean, compile">
+		<if>
+			<and>
+				<isset property="pom.project.properties.npmPackaging" />
+				<istrue value="${generateNpmPackage}" />
+			</and>
+			<then>
+				<bt:dependencies resolutionId="npm.classpath" useScope="runtime">
+					<bt:pom file="pom.xml" id="pom"/>
+				</bt:dependencies>
+        		<bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+			</then>
+		</if>
+	</target>
+
 	<!-- specialized library-ant-scripts can reuse this to create ${versionedName}.jar, ${versionedName}-sources.jar -->
 	<!-- and (via dependency targets) ${versionedName}-javadoc.jar -->
-	<target name="dist-main" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license">
+	<target name="dist-main" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license, make-npm-package">
 		<jar jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF">
 			<fileset dir="${build}"/>
 		</jar>

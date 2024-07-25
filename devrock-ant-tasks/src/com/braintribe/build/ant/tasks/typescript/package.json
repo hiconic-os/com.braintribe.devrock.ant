@@ -1,0 +1,26 @@
+{
+  "name": "@${GITHUB_ORG}/${GROUP_ID}--${PACKAGE_NAME}",
+  "version": "${VERSION}",
+  "main": "src/${ARTIFACT_ID}.js",
+  "types": "src/${ARTIFACT_ID}.d.ts",
+  "files": [
+    "src/**/*"
+  ],
+  "type": "module",
+  "keywords": [
+    "hiconic"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/${GITHUB_ORG}/${GROUP_ID}.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/",
+    "access": "public"
+  },
+  "dependencies": {
+${DEPENDENCIES}
+  },
+  "author": "dev.hiconic",
+  "license": "Apache-2.0"
+}

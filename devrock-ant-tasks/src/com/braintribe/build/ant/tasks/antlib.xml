@@ -56,6 +56,7 @@
 	<taskdef name="hasher" classname="com.braintribe.build.ant.tasks.SolutionHasher"/>
 	<taskdef name="getArtifactsRoot" classname="com.braintribe.build.ant.tasks.WorkingCopyRootForArtifact" />
 	<taskdef name="tfjs" classname="com.braintribe.build.ant.tasks.typescript.GenerateJsInteropTypeScriptTask"/>
+	<taskdef name="npm" classname="com.braintribe.build.ant.tasks.typescript.GenerateNpmPackageTask"/>
 	<taskdef name="indexRes" classname="com.braintribe.build.ant.tasks.IndexResourcesTask"/>
 	<taskdef name="determineProcessingDataInsightFolder" classname="com.braintribe.build.ant.tasks.DetermineProcessingDataInsightFolder" />
 	<taskdef name="buildReleaseView" classname="com.braintribe.build.ant.tasks.BuildReleaseViewTask" />

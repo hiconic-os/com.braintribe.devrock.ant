@@ -9,7 +9,8 @@
 -->
 
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="assemble obf" name="gwt-js-library-ant-script">
-	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+    <bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+
     <property location="src" name="src"/>
     <property location="build" name="build"/>
     <property location="dist" name="dist"/>
@@ -18,8 +19,9 @@
     <property location="war" name="packagingInfoDir"/>
     <property location="context" name="context"/>
     <property location="tmp" name="tmpDir"/>
+
     <target name="init">
-    	<tstamp/>
+        <tstamp/>
         <property environment="env."/>
         <property name="maven.repo.local" value="${env.M2_REPO}"/>
         <bt:pom file="pom.xml" id="maven.project"/>
@@ -49,6 +51,7 @@
         </fail>
         <property name="java4gwt.executable" value="${env.JAVA_8_HOME}${file.separator}bin${file.separator}java" />
     </target>
+
     <target depends="init" name="create-packaging-info">
         <mkdir dir="${packagingInfoDir}"/>
         <bt:dependencies packagingFile="${packagingInfoDir}/packaging.xml" pathId="dummyPath" pomFile="pom.xml"/>
@@ -74,6 +77,15 @@
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
         <echo message="FileClassPathLoader CP: ${classloader.classpath.string}"/>
+
+        <bt:dependencies resolutionId="npm.classpath" useScope="runtime">
+            <bt:pom file="pom.xml" id="pom"/>
+            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl" />
+        </bt:dependencies>
+    </target>
+
+    <target name="clean-war" description="clean up">
+        <delete dir="${packagingInfoDir}/tfjs"/>
     </target>
 
     <target name="compile pretty" depends="prepare-compile-path">
@@ -125,7 +137,7 @@
             <arg value="-Xmx4096M"/>
             <arg value="-cp"/>
             <arg value="${classloader.classpath.string}"/>
-        	<!--arg value="-Dminimize=true"/-->
+            <!--arg value="-Dminimize=true"/-->
             <arg value="-Djava.system.class.loader=com.braintribe.utils.classloader.FileClassPathClassLoader"/>
             <arg value="-Dcom.braintribe.classpath.file=.gwt-compile-classpath"/>
             <arg value="com.google.gwt.dev.Compiler"/>
@@ -149,7 +161,8 @@
         </exec>
         <!--<move file="war/grindlebone/grindlebone.nocache.js" tofile="war/grindlebone/gb.js"/>-->
     </target>
-    <target depends="compile pretty" name="dist">
+
+    <target name="dist" depends="compile pretty">
         <bt:pom file="pom.xml" id="serverSupport.project"/>
         <bt:dependencies useScope="runtime">
             <pom refid="serverSupport.project"/>
@@ -157,56 +170,40 @@
         </bt:dependencies>
         <!-- Delete lib folder to make sure we don't use any old libs. -->
         <!--<delete dir="war/WEB-INF/lib"/>
-		<mkdir dir="war/WEB-INF/lib"/> -->
+        <mkdir dir="war/WEB-INF/lib"/> -->
         <!-- Extract to 'war' folder. This (also) copies jar files to war/WEB-INF/lib. -->
         <!--
-		<unwar dest="war">
-			<resources refid="serverSupport.fileset"/>
-			<patternset>
-				<exclude name="WEB-INF/web.xml"/>
-			</patternset>
-		</unwar>
+        <unwar dest="war">
+            <resources refid="serverSupport.fileset"/>
+            <patternset>
+                <exclude name="WEB-INF/web.xml"/>
+            </patternset>
+        </unwar>
 
-		<fileset id="serverSupport.build.fileset" dir="war/WEB-INF/lib"/>
-		<pathconvert refid="serverSupport.build.fileset" property="serverSupport.build.path"/>
+        <fileset id="serverSupport.build.fileset" dir="war/WEB-INF/lib"/>
+        <pathconvert refid="serverSupport.build.fileset" property="serverSupport.build.path"/>
 
-		<exec executable="java" failonerror="true">
-			<arg value="-Xmx1024M"/>
-			<arg value="-cp"/>
-			<arg value="${serverSupport.build.path}"/>
-			<arg value="com.braintribe.build.gwt.symbol.SymbolTransformer"/>
-			<arg value="${gwt-deploy}/grindlebone"/>
-		</exec>
+        <exec executable="java" failonerror="true">
+            <arg value="-Xmx1024M"/>
+            <arg value="-cp"/>
+            <arg value="${serverSupport.build.path}"/>
+            <arg value="com.braintribe.build.gwt.symbol.SymbolTransformer"/>
+            <arg value="${gwt-deploy}/grindlebone"/>
+        </exec>
 
-		<property name="symbolMapsDist" value="war/WEB-INF/symbolMaps"/>
-		<mkdir dir="${symbolMapsDist}"/>
-		<copy file="${gwt-deploy}/grindlebone/symbolMaps/mergedSymbols" todir="${symbolMapsDist}"/> -->
+        <property name="symbolMapsDist" value="war/WEB-INF/symbolMaps"/>
+        <mkdir dir="${symbolMapsDist}"/>
+        <copy file="${gwt-deploy}/grindlebone/symbolMaps/mergedSymbols" todir="${symbolMapsDist}"/> -->
     </target>
-    <target depends="assemble obf, assemble pretty" name="assemble">
-        <!--
-        <unzip dest="${tmpDir}/tribefireJs-debug" src="${dist}/assembled/${versionedName-debug}.war"/>
-        <unzip dest="${tmpDir}/tribefireJs-runtime" src="${dist}/assembled/${versionedName-runtime}.war"/>
-        <property name="debugDir" value="${tmpDir}/tribefireJs-runtime/debug"/>
-        <mkdir dir="${debugDir}"/>
-        -->
-        <!--<copy file="${tmpDir}/tribefireJs-debug/tribefire.js" tofile="${debugDir}/tribefire.js"/>-->
-        <!-- <copy todir="${debugDir}/tfjs">
-			<fileset dir="${tmpDir}/tribefireJs-debug/tfjs" />
-		</copy> -->
-        <!--
-        <copy file="${dist}/assembled/${versionedName-debug}.zip" tofile="${tmpDir}/tribefireJs-runtime/${versionedName-debug}.zip"/>
-        <copy file="${dist}/assembled/${versionedName-runtime}.zip" tofile="${tmpDir}/tribefireJs-runtime/${versionedName-runtime}.zip"/>
-        <zip basedir="${tmpDir}/tribefireJs-runtime" destfile="${dist}/assembled/${versionedName-debug}.war"/>
-        <delete dir="${tmpDir}"/>
-        -->
-    </target>
-    <target depends="compile pretty" name="clean pretty">
+
+    <target name="clean pretty" depends="compile pretty">
         <move file="war/tfjs/tfjs.nocache.js" tofile="war/tribefire.js"/>
-    	<replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
-    	<replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
+        <replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
+        <replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
         <delete dir="war/tfjs"/>
     </target>
-    <target depends="clean pretty" name="assemble pretty">
+
+    <target name="assemble pretty" depends="clean pretty">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName}.js.zip</echo>
         <zip destfile="${dist}/assembled/${versionedName}.js.zip">
@@ -220,14 +217,24 @@
         <zip basedir="war" destfile="${dist}/assembled/${versionedName-debug}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
         -->
        <!-- <delete file="war/tribefire.js"/> -->
+        <bt:npm buildFolder="${build}" outputDir="${dist}/npm-pretty" resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}--debug" />
+        <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/src/${maven.project.artifactId}.js"/>
     </target>
-    <target depends="compile obf" name="clean obf">
+
+    <target name="clean obf" depends="compile obf">
         <move file="war/tfjs/tfjs.nocache.js" tofile="war/tribefire.js"/>
-    	<replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
-    	<replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
+        <replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
+        <replace file="war/tribefire.js" token="{tf-date}" value="${TODAY}"/>
         <delete dir="war/tfjs"/>
     </target>
-    <target depends="clean obf" name="assemble obf">
+
+    <!-- Temporary task, for testing only -->
+    <target name="make-npm-package obf" depends="prepare-compile-path, common-init">
+        <bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+        <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
+    </target>
+
+    <target name="assemble obf" depends="clean obf">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName}-min.js.zip</echo>
         <zip destfile="${dist}/assembled/${versionedName}-min.js.zip">
@@ -240,21 +247,14 @@
         <zip basedir="war" destfile="${dist}/assembled/${versionedName-runtime}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
         -->
         <!-- <delete file="war/tribefire.js"/> -->
+        <bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+        <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
     </target>
-    <target name="release">
-        <bt:release buildDir="."/>
+
+    <target name="assemble" depends="assemble obf, assemble pretty">
     </target>
-    <!--
-    <target depends="clean-war" description="clean up" name="clean">
-        <delete dir="${build}"/>
-        <delete dir="${dist}"/>
-        <delete dir="${tmpDir}"/>
-    </target>
-	-->
-    <target description="clean up" name="clean-war">
-        <delete dir="${packagingInfoDir}/tfjs"/>
-    </target>
-    <target depends="assemble" description="install to local maven repository" name="install">
+
+    <target name="install" depends="assemble">
         <copy file="dist/assembled/${versionedName}.js.zip" tofile="dist/assembled/${versionedName}.js.zip"/>
         <bt:install>
             <pom refid="maven.project"/>
@@ -263,27 +263,27 @@
 
             <!-- addtional parts -->
             <attach file="dist/assembled/${versionedName}.js.zip" type=":js.zip"/>
-            <!-- TODO: Clarify if this can be deleted permanently
-            <attach file="dist/assembled/${versionedName-runtime}.zip" type="runtime:zip"/>
-            <attach file="dist/assembled/${versionedName-debug}.zip" type="debug:zip"/>
-            -->
             <attach file="asset.man" type="asset:man"/>
         </bt:install>
     </target>
-	<!--
-	<target name="compile-generate" depends="assemble">
-	    <javac srcdir="src" destdir="bin" includeantruntime="false" classpathref="compile.classpath" />
-	</target>
+    <!--
+    <target name="compile-generate" depends="assemble">
+        <javac srcdir="src" destdir="bin" includeantruntime="false" classpathref="compile.classpath" />
+    </target>
 
-	<target name="jar-generate" depends="compile-generate">
-	    <jar destfile="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" basedir="bin">
-	    	<manifest>
-	    		<attribute name="Main-Class" value="com.braintribe.gwt.tribefirejs.client.generator.TribefireJsGenerator"/>
-	    	</manifest>
-	    </jar>
-	</target>
+    <target name="jar-generate" depends="compile-generate">
+        <jar destfile="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class" value="com.braintribe.gwt.tribefirejs.client.generator.TribefireJsGenerator"/>
+            </manifest>
+        </jar>
+    </target>
 
-	<target name="run-generate" depends="jar-generate">
-		<java jar="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" fork="true"></java>
-	</target> -->
+    <target name="run-generate" depends="jar-generate">
+        <java jar="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" fork="true"></java>
+    </target> -->
+
+    <target name="release">
+        <bt:release buildDir="."/>
+    </target>
 </project>

@@ -31,10 +31,10 @@ import jsinterop.annotations.JsType;
 	private static final String jsInteropAnnotationPackage = JsType.class.getPackage().getName();
 
 	public static URLClassLoader prepareClassLoader(File buildFolder, List<AnalysisArtifact> solutions) {
-		URL buildUrl = fileToUrl(buildFolder);
+		Stream<URL> buildUrl = nullableFileToUrlStream(buildFolder);
 		Stream<URL> solutionUrls = extractJarUrlsForSolutions(solutions);
 
-		URL[] urls = Stream.concat(Stream.of(buildUrl), solutionUrls).toArray(URL[]::new);
+		URL[] urls = Stream.concat(buildUrl, solutionUrls).toArray(URL[]::new);
 
 		return new ReverseOrderURLClassLoader(urls, JsType.class.getClassLoader(), TsClassLoaderFactory::loadFromParentFirst);
 	}
@@ -52,6 +52,10 @@ import jsinterop.annotations.JsType;
 
 	private static File getJar(AnalysisArtifact artifact) {
 		return TfSetupTools.getPartFile(artifact, PartIdentifications.jar);
+	}
+
+	private static Stream<URL> nullableFileToUrlStream(File file) {
+		return file == null || !file.exists() ? Stream.empty() : Stream.of(fileToUrl(file));
 	}
 
 	private static URL fileToUrl(File file) {

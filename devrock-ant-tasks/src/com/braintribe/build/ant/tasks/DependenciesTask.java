@@ -358,48 +358,46 @@ private static Logger log = Logger.getLogger(DependenciesTask.class);
 	}
 	
 	private void _execute() throws BuildException {
-		
 		initalizeLogging();
-		
 		new ColorSupport(getProject()).installConsole();
 		
 		McBridge mcBridge = Bridges.getInstance(getProject());
 				
-		
-		final Iterable<? extends CompiledTerminal> terminals;
+		final List<CompiledTerminal> terminals = new ArrayList<>();
 		final CompiledArtifact terminalArtifact; 
 		
-		if (!injectedDependencies.isEmpty()) {
-			terminals = injectedDependencies.stream().map(com.braintribe.build.ant.types.Dependency::asCompiledDependency).collect(Collectors.toList());
-			terminalArtifact = null;
-		}
-		else {
-			if (this.artifact != null) {
-				terminalArtifact = mcBridge.resolveArtifact(CompiledArtifactIdentification.parse(this.artifact));
-				terminals = Collections.singletonList(terminalArtifact);
-			} else   {
-				// walk mode with pom file passed. 
-				if (pomFile == null){
-					if (pom == null) {
-						String msg ="Parameter [pomFile] must be set";
-						throw new BuildException( msg);
-					} else {					
-						// ant doesn't call execute on the inner task, so we might need to do it ourselfs
-						pom.execute();
-						pomFile = pom.getFile();						
-					}
-				}
-						
-				if (pomFile.exists() == false) {
-					String msg ="File [" + pomFile.getAbsolutePath() + "] doesn't exist";
-					throw new BuildException( msg);
-				}	
+		if (this.artifact != null) {
+			terminalArtifact = mcBridge.resolveArtifact(CompiledArtifactIdentification.parse(this.artifact));
+			terminals.add(terminalArtifact);
+
+		} else   {
+			// walk mode with pom file passed. 
+			if (pomFile == null && pom != null) {
+				// ant doesn't call execute on the inner task, so we might need to do it ourselfs
+				pom.execute();
+				pomFile = pom.getFile();
+			}
+
+			if (pomFile == null) {
+				terminalArtifact = null;
+
+			} else {
+				if (!pomFile.exists())
+					throw new BuildException("File [" + pomFile.getAbsolutePath() + "] doesn't exist!");
 				
 				terminalArtifact = mcBridge.readArtifact(pomFile);
-				terminals = Collections.singletonList(terminalArtifact);
+				terminals.add(terminalArtifact);
 			}
 		}
-		
+
+		if (!injectedDependencies.isEmpty())
+			injectedDependencies.stream() //
+					.map(com.braintribe.build.ant.types.Dependency::asCompiledDependency) //
+					.forEach(terminals::add);
+
+		else if (terminals.isEmpty())
+			throw new BuildException("Cannot resolve dependencies, no artifact, pom or explicit dependencies were set.");
+
 		ConfigurableConsoleOutputContainer intro = ConsoleOutputs.configurableSequence();
 		
 		intro.append("Resolving: ");

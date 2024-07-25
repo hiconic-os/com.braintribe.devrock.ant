@@ -8,11 +8,6 @@
  ============================================================================
 -->
 
-<!--
-	commom ant script for models
--->
-
-
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" name="model-ant-script">
 
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
@@ -79,6 +74,18 @@
 					<bt:pom file="pom.xml" id="pom"/>
 				</bt:dependencies>
 				<bt:tfjs buildFolder="${build}" solutionListFile="${dist}/solutions.txt" outputDir="${dist}/jsinterop" />
+			</then>
+		</if>
+	</target>
+
+	<target name="make-npm-package" depends="clean, compile">
+		<if>
+			<istrue value="${generateNpmPackage}" />
+			<then>
+				<bt:dependencies resolutionId="npm.classpath" useScope="runtime">
+					<bt:pom file="pom.xml" id="pom"/>
+				</bt:dependencies>
+        		<bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
 			</then>
 		</if>
 	</target>

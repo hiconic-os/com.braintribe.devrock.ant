@@ -26,10 +26,10 @@ public class DrAntTools {
 	/**
 	 * Intention is to wrap custom tasks with this so their stack-traces are printed, as ANT wouldn't do it.
 	 * <p>
-	 * {@link BuildException}s are not printed, code that throws those is expected to print the property output first and then throw such an
-	 * exception.
+	 * {@link BuildException}s are not printed, code that throws those is expected to print proper output first and then
+	 * throw such an exception.
 	 * <p>
-	 * This is really meant to document bugs, not standard error handling.
+	 * This is really meant to analyze bugs, not standard error handling.
 	 */
 	public static void runAndPrintStacktraceIfNonBuildException(Runnable r) {
 		try {
