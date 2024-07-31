@@ -83,6 +83,7 @@ public class GenerateNpmPackageTask extends Task {
 
 	private static final String GITHUB_ORG = "hiconic-os";
 
+	private String npmPackagingStr;
 	private File buildFolder;
 	private File outputDir;
 	private String resolutionId;
@@ -91,8 +92,8 @@ public class GenerateNpmPackageTask extends Task {
 
 	// @formatter:off
 	// doesn't exist for GWT terminals, but we use it to get the parent and navigate to possible static .d.ts files
-	@Required
-	public void setBuildFolder(File buildFolder) { this.buildFolder = buildFolder; }
+	@Required public void setNpmPackaging(String npmPackaging) { this.npmPackagingStr = npmPackaging; }
+	@Required public void setBuildFolder(File buildFolder) { this.buildFolder = buildFolder; }
 	public void setResolutionId(String resolutionId) { this.resolutionId = resolutionId; }
 
 	/** Optional, defaults to artifactId */
@@ -176,6 +177,9 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		private NpmPackaging determineNpmPackagingHelper() {
+			if (npmPackagingStr != null)
+				return NpmPackaging.valueOf(npmPackagingStr);
+
 			if (isMarkedAsModel(currentArtifact))
 				return NpmPackaging.model;
 
