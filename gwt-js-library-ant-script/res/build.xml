@@ -248,7 +248,7 @@
         <zip basedir="war" destfile="${dist}/assembled/${versionedName-runtime}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
         -->
         <!-- <delete file="war/tribefire.js"/> -->
-        <bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
         <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
     </target>
 
