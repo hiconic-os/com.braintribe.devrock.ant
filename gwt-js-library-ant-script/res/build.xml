@@ -217,7 +217,8 @@
         <zip basedir="war" destfile="${dist}/assembled/${versionedName-debug}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
         -->
        <!-- <delete file="war/tribefire.js"/> -->
-        <bt:npm buildFolder="${build}" outputDir="${dist}/npm-pretty" resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}--debug" />
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-pretty" 
+                resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}--debug" />
         <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/src/${maven.project.artifactId}.js"/>
     </target>
 
@@ -230,7 +231,7 @@
 
     <!-- Temporary task, for testing only -->
     <target name="make-npm-package obf" depends="prepare-compile-path, common-init">
-        <bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
         <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
     </target>
 

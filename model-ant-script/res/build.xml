@@ -85,7 +85,7 @@
 				<bt:dependencies resolutionId="npm.classpath" useScope="runtime">
 					<bt:pom file="pom.xml" id="pom"/>
 				</bt:dependencies>
-        		<bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+				<bt:npm npmPackaging="model" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
 			</then>
 		</if>
 	</target>

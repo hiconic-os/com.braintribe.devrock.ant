@@ -115,7 +115,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 				<bt:dependencies resolutionId="npm.classpath" useScope="runtime">
 					<bt:pom file="pom.xml" id="pom"/>
 				</bt:dependencies>
-        		<bt:npm buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+				<bt:npm npmPackaging="${pom.project.properties.npmPackaging}" buildFolder="${build}" 
+						outputDir="${dist}/npm" resolutionId="npm.classpath" />
 			</then>
 		</if>
 	</target>
