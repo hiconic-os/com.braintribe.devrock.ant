@@ -218,7 +218,7 @@
         -->
        <!-- <delete file="war/tribefire.js"/> -->
         <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-pretty" 
-                resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}--debug" />
+                resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}-dev" />
         <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/src/${maven.project.artifactId}.js"/>
     </target>
 
