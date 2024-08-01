@@ -290,7 +290,7 @@ public class ExtendedXmlJUnitResultFormatter extends XMLJUnitResultFormatter {
 			// todo: check superclass
 			return Class.forName(testClassName).getAnnotationsByType(RunWith.class).length > 0;
 		} catch (ClassNotFoundException e) {
-			throw new RuntimeException(e);
+			return false;
 		}
 	}
 
