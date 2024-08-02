@@ -101,8 +101,8 @@
 		<!-- Generate Jinni completion script -->
 		<property environment="env" />
 		<condition property="java.executable" value="${env.JAVA_HOME}${file.separator}bin${file.separator}java" else="java">
-		  <isset property="env.JAVA_HOME" />
-  	        </condition>
+			<isset property="env.JAVA_HOME" />
+		</condition>
 		<echo message="Generating completion script with java: ${java.executable}"/>
 		<!-- We need to set the newenvironment attribute in order NOT to inherit other env vars when it's executed, especially in CI
 		where in alpine image we have java related env vars (e.g. LD_LIBRARY_PATH=/opt/java/jdk8/lib/server:/opt/java/jdk8/lib:/opt/java/jdk8/../lib).
