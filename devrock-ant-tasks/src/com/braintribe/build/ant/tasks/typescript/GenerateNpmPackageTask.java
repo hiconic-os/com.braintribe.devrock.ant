@@ -401,6 +401,8 @@ public class GenerateNpmPackageTask extends Task {
 			return declaredTypeSignatures.stream() //
 					.map(this::toClassIfPossible) //
 					.filter(c -> c != null) //
+					// just in case the xml contains some BS, e.g. classes with @GmSystemInterface
+					.filter(customGmTypeFilter) // 
 					.collect(Collectors.toList());
 		}
 

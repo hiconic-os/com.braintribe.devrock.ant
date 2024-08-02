@@ -204,6 +204,7 @@ public class GenerateJsInteropTypeScriptTask extends Task {
 			return declaredTypeSignatures.stream() //
 					.map(this::toClassIfPossible) //
 					.filter(c -> c != null) //
+					.filter(customGmTypeFilter) //
 					.collect(Collectors.toList());
 		}
 
