@@ -59,6 +59,16 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<FileSetTarget id="jinni-fileset" type="application:zip"/>
 		</bt:dependencies>
 
+		<bt:dependencies>
+			<dependency 
+				groupId="tribefire.extension.setup" 
+				artifactId="hiconic-sdk-updator" 
+				version="${pom.project.properties.V.tribefire.extension.setup}" 
+				exclusions="*:*" 
+			/>
+			<FileSetTarget id="updator-fileset" type="jar"/>
+		</bt:dependencies>
+
 		<patternset id="libs-excluded">
 			<exclude name="lib/**"/>
 		</patternset>
@@ -94,6 +104,11 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<copy todir="${dr-dir}">
 			<fileset dir="res/${pom.project.artifactId}"/>
 		</copy>
+
+		<copy todir="${jinni-dir}/bin">
+            <resources refid="updator-fileset"/>
+            <mapper type="glob" from="*" to="hiconic-sdk-updator.jar"/>
+        </copy>
 	</target>
 
 	<target name="assemble" depends="dist">
