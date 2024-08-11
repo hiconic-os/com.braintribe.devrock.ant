@@ -20,7 +20,7 @@ limitations under the License.
 		<version>[1.0,1.1)</version>
 	</parent>
 	<artifactId>hiconic-sdk-ant-script</artifactId>
-	<version>1.0.5</version>
+	<version>1.0.6</version>
 	<packaging>pom</packaging>
 	<properties>
 	</properties>
