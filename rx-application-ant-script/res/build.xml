@@ -14,7 +14,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 	<property location="build" name="build"/>
 	<property location="dist" name="dist"/>
 
-	<target depends="common-init" name="init">
+	<target name="init" depends="common-init">
 		<bt:pom file="pom.xml" id="maven.project"/>
 		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile">
 			<pom refid="maven.project"/>
@@ -23,13 +23,18 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<pom refid="maven.project"/>
 		</bt:dependencies>
 		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
+		<if>
+			<isset property="maven.project.properties.launchScript"/>
+			<then><property name="launchScript" value="${maven.project.properties.launchScript}"/></then>
+			<else><property name="launchScript" value="run"/></else>
+		</if>
 		<!-- Create time stamp -->
 		<tstamp/>
 		<!-- Create the build directory structure used by compile -->
 		<mkdir dir="${build}"/>
 	</target>
 
-	<target depends="init" description="compile the source " name="compile">
+	<target name="compile" depends="init">
 		<!-- Compile the java code from ${src} into ${build} -->
 		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
 		<javac debug="true" debuglevel="lines,source,vars" encoding="UTF-8" srcdir="${src}" destdir="${build}"
@@ -46,7 +51,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</copy>
 	</target>
 
-	<target depends="clean,compile, dist-jar-license" description="generate the distribution" name="dist">
+	<target name="dist" depends="clean, compile, dist-jar-license">
 		<bt:dependencies>
 			<dependency groupId="hiconic.platform.reflex" artifactId="reflex-app-resources" version="[1.0,1.1)" scope="runtime"
 				classifier="resources" type="zip"/>
@@ -100,10 +105,52 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<replace file="${dist}/application/bin/run" token="launch.jar" value="${launch-jar}"/>
 		<replace file="${dist}/application/bin/run.bat" token="launch.jar" value="${launch-jar}"/>
 
+		<!-- Generate shell completion script -->
+		<property environment="env" />
+		<condition property="java.executable" value="${env.JAVA_HOME}${file.separator}bin${file.separator}java" else="java">
+			<isset property="env.JAVA_HOME" />
+  		</condition>
+		<echo message="Generating completion script for [${launchScript}] with java:&#xa;    ${java.executable}"/>
+		<!-- We need to set the newenvironment attribute in order NOT to inherit other env vars when it's executed, especially in CI
+		where in alpine image we have java related env vars (e.g. LD_LIBRARY_PATH=/opt/java/jdk8/lib/server:/opt/java/jdk8/lib:/opt/java/jdk8/../lib).
+		This is important in CI because we compile with custom java version by setting the java.executable. -->
+		<exec executable="${java.executable}" failonerror="true" newenvironment="true">
+			<!--  Uncomment if debugging the reflex app is needed
+			<arg value="-Xdebug"/>
+			<arg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+			 -->
+			<arg value="-jar"/>
+			<arg value="${dist}/application/lib/${launch-jar}"/>
+			<arg value="reflect-service-domains"/>
+			<arg value=":"/>
+			<arg value="options"/>
+			<arg value="--response"/>
+			<arg value="${dist}/service-domains.json"/>
+			<arg value="--protocol"/>
+			<arg value="none"/>
+			<!-- We need to specify at least one env variable to make newenvironment attribute work. -->
+			<!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows). -->
+			<env key="TEMP" value="${env.TEMP}"/>
+		</exec>
+		<exec executable="cmd" failonerror="false">
+			<arg value="/c"/>
+			<arg value="hc-build"/>
+			<arg value="generate-shell-completion-script"/>
+			<arg value="--cliCommand"/>
+			<arg value="${launchScript}"/>
+			<arg value="--outputFile"/>
+			<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
+			<arg value="--serviceDomains"/>
+			<arg value="@sds"/>
+			<arg value=":sds"/>
+			<arg value="from-file"/>
+			<arg value="${dist}/service-domains.json"/>
+		</exec>
+
 		<chmod file="${dist}/application/bin/*" perm="754"/>
 	</target>
 
-	<target depends="dist" name="assemble">
+	<target name="assemble" depends="dist">
 		<zip destfile="${dist}/${versionedName}.zip">
 			<zipfileset dir="${dist}/application" filemode="754">
 			  <and>
@@ -122,7 +169,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</zip>
 	</target>
 
-	<target depends="assemble" description="install to local maven repository" name="install">
+	<target name="install" depends="assemble">
 		<bt:install file="${dist}/application/lib/${versionedName}.jar">
 			<pom refid="maven.project"/>
 			<attach file="dist/${versionedName}.zip" type="application:zip"/>
