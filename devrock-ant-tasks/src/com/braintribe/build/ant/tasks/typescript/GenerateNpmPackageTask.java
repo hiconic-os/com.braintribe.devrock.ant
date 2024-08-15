@@ -281,7 +281,11 @@ public class GenerateNpmPackageTask extends Task {
 			writeJsinteropDts();
 
 			// we only expect model types in gm-core-api, and we don't ensure them
-			writeMainMetaExportingJsAndDts();
+			if (isCurrentGmCoreApi())
+				writeMainModelEnsuringJsAndDTs();
+			else
+				writeMainMetaExportingJsAndDts();
+				
 		}
 
 		// ################################################
