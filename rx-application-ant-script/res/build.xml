@@ -132,20 +132,41 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows). -->
 			<env key="TEMP" value="${env.TEMP}"/>
 		</exec>
-		<exec executable="cmd" failonerror="false">
-			<arg value="/c"/>
-			<arg value="hc-build"/>
-			<arg value="generate-shell-completion-script"/>
-			<arg value="--cliCommand"/>
-			<arg value="${launchScript}"/>
-			<arg value="--outputFile"/>
-			<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
-			<arg value="--serviceDomains"/>
-			<arg value="@sds"/>
-			<arg value=":sds"/>
-			<arg value="from-file"/>
-			<arg value="${dist}/service-domains.json"/>
-		</exec>
+		<if>
+			<os family="windows"/>
+			<then>
+				<exec executable="cmd" failonerror="false">
+					<arg value="/c"/>
+					<arg value="hc-build"/>
+					<arg value="generate-shell-completion-script"/>
+					<arg value="--cliCommand"/>
+					<arg value="${launchScript}"/>
+					<arg value="--outputFile"/>
+					<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
+					<arg value="--serviceDomains"/>
+					<arg value="@sds"/>
+					<arg value=":sds"/>
+					<arg value="from-file"/>
+					<arg value="${dist}/service-domains.json"/>
+				</exec>
+			</then>
+			<else>
+				<exec executable="/bin/sh" failonerror="false">
+					<arg value="-c"/>
+					<arg value="hc-build"/>
+					<arg value="generate-shell-completion-script"/>
+					<arg value="--cliCommand"/>
+					<arg value="${launchScript}"/>
+					<arg value="--outputFile"/>
+					<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
+					<arg value="--serviceDomains"/>
+					<arg value="@sds"/>
+					<arg value=":sds"/>
+					<arg value="from-file"/>
+					<arg value="${dist}/service-domains.json"/>
+				</exec>
+			</else>
+		</if>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
 	</target>
