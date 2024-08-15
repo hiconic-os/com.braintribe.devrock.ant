@@ -154,17 +154,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<else>
 				<exec executable="/bin/sh" failonerror="true">
 					<arg value="-c"/>
-					<arg value="hc-build"/>
-					<arg value="generate-shell-completion-script"/>
-					<arg value="--cliCommand"/>
-					<arg value="${launchScript}"/>
-					<arg value="--outputFile"/>
-					<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
-					<arg value="--serviceDomains"/>
-					<arg value="@sds"/>
-					<arg value=":sds"/>
-					<arg value="from-file"/>
-					<arg value="${dist}/service-domains.json"/>
+					<arg value="hc-build generate-shell-completion-script --cliCommand launchScript} --outputFile dist}/application/bin/${launchScript}-completion.sh --serviceDomains @sds :sds from-file dist}/service-domains.json" />
 				</exec>
 			</else>
 		</if>
