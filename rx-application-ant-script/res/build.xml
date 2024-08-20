@@ -106,57 +106,63 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<replace file="${dist}/application/bin/run.bat" token="launch.jar" value="${launch-jar}"/>
 
 		<!-- Generate shell completion script -->
-		<property environment="env" />
-		<condition property="java.executable" value="${env.JAVA_HOME}${file.separator}bin${file.separator}java" else="java">
-			<isset property="env.JAVA_HOME" />
-  		</condition>
-		<echo message="Reflecting Service Domains to generate completion script for [${launchScript}] with java:&#xa;    ${java.executable}"/>
-		<!-- We need to set the newenvironment attribute in order NOT to inherit other env vars when it's executed, especially in CI
-		where in alpine image we have java related env vars (e.g. LD_LIBRARY_PATH=/opt/java/jdk8/lib/server:/opt/java/jdk8/lib:/opt/java/jdk8/../lib).
-		This is important in CI because we compile with custom java version by setting the java.executable. -->
-		<exec executable="${java.executable}" failonerror="true" newenvironment="true">
-			<!--  Uncomment if debugging the reflex app is needed
-			<arg value="-Xdebug"/>
-			<arg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
-			 -->
-			<arg value="-jar"/>
-			<arg value="${dist}/application/lib/${launch-jar}"/>
-			<arg value="reflect-service-domains"/>
-			<arg value=":"/>
-			<arg value="options"/>
-			<arg value="--response"/>
-			<arg value="${dist}/service-domains.json"/>
-			<arg value="--protocol"/>
-			<arg value="none"/>
-			<!-- We need to specify at least one env variable to make newenvironment attribute work. -->
-			<!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows). -->
-			<env key="TEMP" value="${env.TEMP}"/>
-		</exec>
-		<echo message="Generating completion script for [${launchScript}]."/>
+		<!-- ONLY IFF pom.xml property says cli=true -->
 		<if>
-			<os family="windows"/>
+			<istrue value="${pom.project.properties.cli}" />
 			<then>
-				<exec executable="cmd" failonerror="true">
-					<arg value="/c"/>
-					<arg value="hc-build"/>
-					<arg value="generate-shell-completion-script"/>
-					<arg value="--cliCommand"/>
-					<arg value="${launchScript}"/>
-					<arg value="--outputFile"/>
-					<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
-					<arg value="--serviceDomains"/>
-					<arg value="@sds"/>
-					<arg value=":sds"/>
-					<arg value="from-file"/>
+				<property environment="env" />
+				<condition property="java.executable" value="${env.JAVA_HOME}${file.separator}bin${file.separator}java" else="java">
+					<isset property="env.JAVA_HOME" />
+		  		</condition>
+				<echo message="Reflecting Service Domains to generate completion script for [${launchScript}] with java:&#xa;    ${java.executable}"/>
+				<!-- We need to set the newenvironment attribute in order NOT to inherit other env vars when it's executed, especially in CI
+				where in alpine image we have java related env vars (e.g. LD_LIBRARY_PATH=/opt/java/jdk8/lib/server:/opt/java/jdk8/lib:/opt/java/jdk8/../lib).
+				This is important in CI because we compile with custom java version by setting the java.executable. -->
+				<exec executable="${java.executable}" failonerror="true" newenvironment="true">
+					<!--  Uncomment if debugging the reflex app is needed
+					<arg value="-Xdebug"/>
+					<arg value="-Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=y"/>
+					 -->
+					<arg value="-jar"/>
+					<arg value="${dist}/application/lib/${launch-jar}"/>
+					<arg value="reflect-service-domains"/>
+					<arg value=":"/>
+					<arg value="options"/>
+					<arg value="--response"/>
 					<arg value="${dist}/service-domains.json"/>
+					<arg value="--protocol"/>
+					<arg value="none"/>
+					<!-- We need to specify at least one env variable to make newenvironment attribute work. -->
+					<!-- Luckily, we need the TEMP, otherwise the temp folder is the Windows folder (on Windows). -->
+					<env key="TEMP" value="${env.TEMP}"/>
 				</exec>
+				<echo message="Generating completion script for [${launchScript}]."/>
+				<if>
+					<os family="windows"/>
+					<then>
+						<exec executable="cmd" failonerror="true">
+							<arg value="/c"/>
+							<arg value="hc-build"/>
+							<arg value="generate-shell-completion-script"/>
+							<arg value="--cliCommand"/>
+							<arg value="${launchScript}"/>
+							<arg value="--outputFile"/>
+							<arg value="${dist}/application/bin/${launchScript}-completion.sh"/>
+							<arg value="--serviceDomains"/>
+							<arg value="@sds"/>
+							<arg value=":sds"/>
+							<arg value="from-file"/>
+							<arg value="${dist}/service-domains.json"/>
+						</exec>
+					</then>
+					<else>
+						<exec executable="/bin/sh" failonerror="true">
+							<arg value="-c"/>
+							<arg value="hc-build generate-shell-completion-script --cliCommand ${launchScript} --outputFile ${dist}/application/bin/${launchScript}-completion.sh --serviceDomains @sds :sds from-file ${dist}/service-domains.json"/>
+						</exec>
+					</else>
+				</if>
 			</then>
-			<else>
-				<exec executable="/bin/sh" failonerror="true">
-					<arg value="-c"/>
-					<arg value="hc-build generate-shell-completion-script --cliCommand ${launchScript} --outputFile ${dist}/application/bin/${launchScript}-completion.sh --serviceDomains @sds :sds from-file ${dist}/service-domains.json"/>
-				</exec>
-			</else>
 		</if>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
