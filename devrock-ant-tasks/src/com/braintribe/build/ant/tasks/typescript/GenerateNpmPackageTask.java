@@ -96,9 +96,10 @@ public class GenerateNpmPackageTask extends Task {
 	@Required public void setBuildFolder(File buildFolder) { this.buildFolder = buildFolder; }
 	public void setResolutionId(String resolutionId) { this.resolutionId = resolutionId; }
 
-	/** Optional, defaults to artifactId */
+	/** Optional, defaults to artifactId.
+	 * For GWT terminals, the value for pretty build is "${artifactId}-dev. */
 	public void setNpmPackageName(String npmPackageName) { this.npmPackageName = npmPackageName;}
-	/** Optional, only for local testing */
+	/** Optional, only for local testing and the npmrc is for GitHub (i.e. incompatible with npmjs-only package.json we generate) */
 	public void setGenerateNpmrc(boolean generateNpmrc) { this.generateNpmrc = generateNpmrc; }
 	// @formatter:on
 
@@ -285,7 +286,7 @@ public class GenerateNpmPackageTask extends Task {
 				writeMainModelEnsuringJsAndDTs();
 			else
 				writeMainMetaExportingJsAndDts();
-				
+
 		}
 
 		// ################################################
@@ -406,7 +407,7 @@ public class GenerateNpmPackageTask extends Task {
 					.map(this::toClassIfPossible) //
 					.filter(c -> c != null) //
 					// just in case the xml contains some BS, e.g. classes with @GmSystemInterface
-					.filter(customGmTypeFilter) // 
+					.filter(customGmTypeFilter) //
 					.collect(Collectors.toList());
 		}
 
@@ -550,7 +551,7 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		private void writeMainModelEnsuringJsAndDTs() {
-			ModelEnsuringContext meContext = ModelEnsuringContext.createForNpm(GITHUB_ORG, gmTypesAll, gId, aId, version, deps);
+			ModelEnsuringContext meContext = ModelEnsuringContext.createForNpm(gmTypesAll, gId, aId, version, deps);
 
 			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(writer -> ModelEnsuringDTsWriter.writeDts(meContext, writer));
 			FileTools.write(outSrcFile(aId + ".js")).usingWriter(writer -> ModelEnsuringJsWriter.writeJs(meContext, writer));
@@ -618,7 +619,7 @@ public class GenerateNpmPackageTask extends Task {
 
 		private void writeImports(Writer writer) throws IOException {
 			for (VersionedArtifactIdentification dep : deps)
-				writer.append("import \"" + TypeScriptWriterHelper.npmPackageFullName(GITHUB_ORG, dep) + "\";\n");
+				writer.append("import \"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\";\n");
 			if (!deps.isEmpty())
 				writer.append("\n");
 		}
@@ -630,15 +631,19 @@ public class GenerateNpmPackageTask extends Task {
 		private void writePackageJsonTo(Writer w) throws IOException {
 			String template = loadFromClasspath("package.json");
 
+			String groupId = currentArtifact.getGroupId();
+			String packageSuffix = NullSafe.get(npmPackageName, currentArtifact.getArtifactId());
+
+			String fullPackageName = TypeScriptWriterHelper.npmPackageFullName(groupId, packageSuffix);
+
 			String deps = packageDepsAsString();
-			String packageName = NullSafe.get(npmPackageName, currentArtifact.getArtifactId());
 
 			String packageJson = template //
 					.replace("${GITHUB_ORG}", GITHUB_ORG) //
+					.replace("${FULL_PACKAGE_NAME}", fullPackageName) //
 					.replace("${VERSION}", currentArtifact.getVersion()) //
 					.replace("${ARTIFACT_ID}", currentArtifact.getArtifactId()) //
-					.replace("${PACKAGE_NAME}", packageName) //
-					.replace("${GROUP_ID}", currentArtifact.getGroupId()) //
+					.replace("${GROUP_ID}", groupId) //
 					.replace("${DEPENDENCIES}", deps);
 
 			w.append(packageJson);
@@ -660,7 +665,7 @@ public class GenerateNpmPackageTask extends Task {
 			String majorMinorDot = StringTools.removeLastNCharacters(version, path.length());
 			String majorMinorX = majorMinorDot + "x";
 
-			return "\"" + TypeScriptWriterHelper.npmPackageFullName(GITHUB_ORG, dep) + "\": " + "\"" + majorMinorX + "\"";
+			return "\"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\": " + "\"" + majorMinorX + "\"";
 		}
 
 		private void writeNpmrcIfNeeded() {

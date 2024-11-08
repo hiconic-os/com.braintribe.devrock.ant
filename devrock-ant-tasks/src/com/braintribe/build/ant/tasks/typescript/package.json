@@ -1,5 +1,5 @@
 {
-  "name": "@${GITHUB_ORG}/${GROUP_ID}--${PACKAGE_NAME}",
+  "name": "${FULL_PACKAGE_NAME}",
   "version": "${VERSION}",
   "main": "src/${ARTIFACT_ID}.js",
   "types": "src/${ARTIFACT_ID}.d.ts",
@@ -15,7 +15,6 @@
     "url": "git+https://github.com/${GITHUB_ORG}/${GROUP_ID}.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/",
     "access": "public"
   },
   "dependencies": {
