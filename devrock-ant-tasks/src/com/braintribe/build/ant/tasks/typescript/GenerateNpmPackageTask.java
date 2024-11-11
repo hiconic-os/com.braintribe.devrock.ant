@@ -286,7 +286,6 @@ public class GenerateNpmPackageTask extends Task {
 				writeMainModelEnsuringJsAndDTs();
 			else
 				writeMainMetaExportingJsAndDts();
-
 		}
 
 		// ################################################
@@ -493,6 +492,7 @@ public class GenerateNpmPackageTask extends Task {
 				}
 
 			}
+
 			return result;
 		}
 
@@ -553,10 +553,21 @@ public class GenerateNpmPackageTask extends Task {
 		private void writeMainModelEnsuringJsAndDTs() {
 			ModelEnsuringContext meContext = ModelEnsuringContext.createForNpm(gmTypesAll, gId, aId, version, deps);
 
-			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(writer -> ModelEnsuringDTsWriter.writeDts(meContext, writer));
+			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(writer -> writeMainModelEnsuringJsAndDTs(meContext, writer));
 			FileTools.write(outSrcFile(aId + ".js")).usingWriter(writer -> ModelEnsuringJsWriter.writeJs(meContext, writer));
 		}
 
+		private void writeMainModelEnsuringJsAndDTs(ModelEnsuringContext meContext, Writer writer) throws IOException {
+			if (isCurrentGmCoreApi()) {
+				if (copyStaticDts())
+					writeTripleSlashReference(staticDtsFileName(aId), writer);
+				writeTripleSlashReference(jsinteropDtsFileName(aId), writer);
+			}
+
+			ModelEnsuringDTsWriter.writeDts(meContext, writer);
+		}
+
+		// If the name is confusing, check the implementation below to see the "meta" that's being exported.
 		private void writeMainMetaExportingJsAndDts() {
 			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(this::writeMetaExportingDts);
 			FileTools.write(outSrcFile(aId + ".js")).usingWriter(this::writeMetaExportingJs);
@@ -566,8 +577,6 @@ public class GenerateNpmPackageTask extends Task {
 			// triple slashes
 			if (copyStaticDts())
 				writeTripleSlashReference(staticDtsFileName(aId), writer);
-			if (isCurrentGmCoreApi())
-				writeTripleSlashReference(typesDtsFileName(aId), writer);
 			writeTripleSlashReference(jsinteropDtsFileName(aId), writer);
 			writer.append("\n");
 
