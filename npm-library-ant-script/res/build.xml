@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2022
+
+This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this library; See http://www.gnu.org/licenses/.
+-->
+
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks"	name="resources-ant-script">
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
+
+	<!-- 
+		THIS IS JUST TEMPORARY
+
+		The point is to publish an NPM package into npm registry only. But we don't have a node/npm specific pipeline, so we
+		treat this is a Maven artifact with only pom.xml (which takes care of updating a version after each pulishing).
+
+		The publishing to npm registry happens because the pom.xml is marked as npmLibrary (property npmPackaging).
+	 -->
+
+	<target name="init">
+		<bt:pom id="pom.project" file="pom.xml">
+		</bt:pom>
+		<tstamp/>
+	</target>
+
+	<target name="clean">
+		<delete dir="dist"/>
+	</target>
+
+	<target name="dist" depends="clean, init" >
+		<mkdir dir="dist/npm/dist"/>
+		<copy file="package-dist.json" tofile="dist/npm/package.json"/>
+		<copy toDir="dist/npm/dist">
+			<fileset dir="src-compiled" />
+		</copy>
+		<replace file="dist/npm/package.json" token="@VERSION" value="${pom.project.version}"/>
+	</target>
+
+	<target name="install" depends="dist" >
+		<bt:install>
+			<pom refid="pom.project"/>
+		</bt:install>
+	</target>
+
+</project>
