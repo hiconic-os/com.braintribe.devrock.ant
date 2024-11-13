@@ -13,7 +13,6 @@ import static com.braintribe.model.typescript.TypeScriptWriterHelper.staticDtsFi
 import static com.braintribe.model.typescript.TypeScriptWriterHelper.typesDtsFileName;
 import static com.braintribe.model.typescript.TypeScriptWriterHelper.writeTripleSlashReference;
 import static com.braintribe.model.typescript.TypeScriptWriterHelper.writeTripleSlashReferenceToMain;
-import static com.braintribe.utils.SysPrint.spOut;
 import static com.braintribe.utils.lcd.CollectionTools2.asSet;
 import static com.braintribe.utils.lcd.CollectionTools2.concat;
 import static com.braintribe.utils.lcd.CollectionTools2.newSet;
@@ -133,7 +132,7 @@ public class GenerateNpmPackageTask extends Task {
 		private final String aId = currentArtifact.getArtifactId();
 		private final String version = currentArtifact.getVersion();
 
-		private final File outputSrcDir = new File(outputDir, "src");
+		private final File outputSrcDir = new File(outputDir, "dist");
 
 		private List<AnalysisArtifact> deps = emptyList();
 
@@ -746,17 +745,4 @@ public class GenerateNpmPackageTask extends Task {
 		model
 	}
 
-	public static class Tmp {
-
-		public static void main(String[] args) {
-			String version = "2.1.56";
-			String suffix = StringTools.getSubstringAfterLast(version, ".");
-
-			String majorMinorDot = StringTools.removeLastNCharacters(version, suffix.length());
-			String majorMinorX = majorMinorDot + "x";
-
-			spOut(majorMinorX);
-
-		}
-	}
 }

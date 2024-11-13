@@ -1,10 +1,10 @@
 {
   "name": "${FULL_PACKAGE_NAME}",
   "version": "${VERSION}",
-  "main": "src/${ARTIFACT_ID}.js",
-  "types": "src/${ARTIFACT_ID}.d.ts",
+  "main": "dist/${ARTIFACT_ID}.js",
+  "types": "dist/${ARTIFACT_ID}.d.ts",
   "files": [
-    "src/**/*"
+    "dist/**/*"
   ],
   "type": "module",
   "keywords": [
