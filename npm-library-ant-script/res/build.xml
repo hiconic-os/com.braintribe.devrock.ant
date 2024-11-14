@@ -37,7 +37,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<mkdir dir="dist/npm/dist"/>
 		<copy file="package-dist.json" tofile="dist/npm/package.json"/>
 		<copy toDir="dist/npm/dist">
-			<fileset dir="src-compiled" />
+			<fileset dir="src" />
 		</copy>
 		<replace file="dist/npm/package.json" token="@VERSION" value="${pom.project.version}"/>
 	</target>
