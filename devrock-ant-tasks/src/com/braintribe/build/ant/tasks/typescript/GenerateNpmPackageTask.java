@@ -560,13 +560,13 @@ public class GenerateNpmPackageTask extends Task {
 		private void writeMainModelEnsuringDTs(ModelEnsuringContext meContext) throws IOException {
 			Writer writer = dtsWriter();
 
-			if (isCurrentGmCoreApi())
-				copyStaticDts(writer);
-
 			writeBlockComment(writer, "Types");
 			
 			ModelEnsuringDTsWriter.writeDts(meContext, writer);
 			TypeScriptWriterForModels.write(gmTypesDeclared, jsNameResolver, writer);
+
+			if (isCurrentGmCoreApi())
+				copyStaticDts(writer);
 		}
 
 		// If the name is confusing, check the implementation below to see the "meta" that's being exported.
