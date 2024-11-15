@@ -8,11 +8,6 @@
 package com.braintribe.build.ant.tasks.typescript;
 
 import static com.braintribe.model.typescript.TypeScriptWriterHelper.createCustomGmTypeFilter;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.jsinteropDtsFileName;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.staticDtsFileName;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.typesDtsFileName;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.writeTripleSlashReference;
-import static com.braintribe.model.typescript.TypeScriptWriterHelper.writeTripleSlashReferenceToMain;
 import static com.braintribe.utils.lcd.CollectionTools2.asSet;
 import static com.braintribe.utils.lcd.CollectionTools2.concat;
 import static com.braintribe.utils.lcd.CollectionTools2.newSet;
@@ -22,8 +17,12 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.partitioningBy;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.net.URL;
@@ -47,6 +46,7 @@ import com.braintribe.build.ant.utils.DrAntTools;
 import com.braintribe.cfg.Required;
 import com.braintribe.common.lcd.UnknownEnumException;
 import com.braintribe.devrock.mc.api.commons.PartIdentifications;
+import com.braintribe.logging.Logger;
 import com.braintribe.model.artifact.analysis.AnalysisArtifact;
 import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
 import com.braintribe.model.artifact.analysis.AnalysisDependency;
@@ -76,6 +76,8 @@ import com.braintribe.utils.lcd.NullSafe;
  * @author peter.gazdik
  */
 public class GenerateNpmPackageTask extends Task {
+
+	private static final Logger log = Logger.getLogger(GenerateNpmPackageTask.class);
 
 	private static final String CLASS_FILE_SUFFIX = ".class";
 	private static final int CLASS_FILE_SUFFIX_LENGTH = CLASS_FILE_SUFFIX.length();
@@ -112,7 +114,12 @@ public class GenerateNpmPackageTask extends Task {
 	}
 
 	private void _execute() throws BuildException {
-		new GenerateNpmPackageExecution().run();
+		try {
+			new GenerateNpmPackageExecution().run();
+
+		} catch (IOException e) {
+			throw new BuildException("Error while generating NPM package.", e);
+		}
 	}
 
 	private class GenerateNpmPackageExecution {
@@ -146,6 +153,9 @@ public class GenerateNpmPackageTask extends Task {
 
 		private String problemMsg;
 
+		private Writer dtsWriter;
+		private Writer jsWriter;
+
 		private Set<String> resolveModelArtifactNames() {
 			Set<String> result = asSet();
 
@@ -160,7 +170,7 @@ public class GenerateNpmPackageTask extends Task {
 			return (AnalysisArtifact) resolution.getTerminals().get(0);
 		}
 
-		public void run() {
+		public void run() throws IOException {
 			determineNpmPackaging();
 
 			validate();
@@ -225,7 +235,7 @@ public class GenerateNpmPackageTask extends Task {
 		// ## . . . . . . Write NPM package . . . . . . .##
 		// ################################################
 
-		private void writeNpmPackage() {
+		private void writeNpmPackage() throws IOException {
 			FileTools.ensureFolderExists(outputSrcDir);
 
 			switch (npmPackaging) {
@@ -242,49 +252,49 @@ public class GenerateNpmPackageTask extends Task {
 					throw new UnknownEnumException(npmPackaging);
 			}
 
+			closeWriters();
+
 			writePackageJson();
 			writeNpmrcIfNeeded();
 		}
 
-		private void writeGwtTerminalPackage() {
+		// jsinterop.d.ts, main.d.ts
+		private void writeGwtTerminalPackage() throws IOException {
 			resolveDepsAllModels();
 
 			addClassesFromDepsToRegularClasses();
 
-			writeJsinteropDts();
-
 			writeMainGwtTerminalDts();
+
+			writeJsinteropDts();
 		}
 
-		private void writeModelPackage() {
+		private void writeModelPackage() throws IOException {
 			resolveDepsDirectModelsOnly();
 
 			analyzeLocalClasses();
 
-			writeTypesDts();
-
 			writeMainModelEnsuringJsAndDTs();
 		}
 
-		private void writeTypeScriptDeclarationPackage() {
-			if (isCurrentGmCoreApi()) {
-				analyzeLocalClasses();
-				writeTypesDts();
+		// GM CORE: types.dts, jsinterop.d.ts, main.d.ts main.js
+		// OTHERS: jsinterop.d.ts, main.d.ts main.js
+		private void writeTypeScriptDeclarationPackage() throws IOException {
+			if (isCurrentGmCoreApi())
 				// no resolveDeps needed --> gm-core-api doesn't depend on any model or dts artifact
-
-			} else {
+				analyzeLocalClasses();
+			else
 				resolveDepsAllModels();
-			}
 
 			addClassesFromDepsToRegularClasses();
-
-			writeJsinteropDts();
 
 			// we only expect model types in gm-core-api, and we don't ensure them
 			if (isCurrentGmCoreApi())
 				writeMainModelEnsuringJsAndDTs();
 			else
 				writeMainMetaExportingJsAndDts();
+
+			writeJsinteropDts();
 		}
 
 		// ################################################
@@ -531,39 +541,32 @@ public class GenerateNpmPackageTask extends Task {
 		// ##. . . . . . . . Write Files . . . . . . . . ##
 		// ################################################
 
-		private void writeTypesDts() {
-			FileTools.write(outSrcFile(typesDtsFileName(aId))).usingWriter(this::writeTypesDts);
-		}
+		private void writeJsinteropDts() throws IOException {
+			Writer writer = dtsWriter();
 
-		private void writeTypesDts(Writer writer) throws IOException {
-			writeTripleSlashReferenceToMain(aId, writer);
-			TypeScriptWriterForModels.write(gmTypesDeclared, jsNameResolver, writer);
-		}
+			writeBlockComment(writer, "JsInterop");
 
-		private void writeJsinteropDts() {
-			FileTools.write(outSrcFile(jsinteropDtsFileName(aId))).usingWriter(this::writeJsinteropDts);
-		}
-
-		private void writeJsinteropDts(Writer writer) throws IOException {
-			writeTripleSlashReferenceToMain(aId, writer);
 			TypeScriptWriterForClasses.write(regularClasses, customGmTypeFilter, writer);
 		}
 
-		private void writeMainModelEnsuringJsAndDTs() {
+		private void writeMainModelEnsuringJsAndDTs() throws IOException {
 			ModelEnsuringContext meContext = ModelEnsuringContext.createForNpm(gmTypesAll, gId, aId, version, deps);
 
-			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(writer -> writeMainModelEnsuringJsAndDTs(meContext, writer));
-			FileTools.write(outSrcFile(aId + ".js")).usingWriter(writer -> ModelEnsuringJsWriter.writeJs(meContext, writer));
+			writeMainModelEnsuringDTs(meContext);
+
+			ModelEnsuringJsWriter.writeJs(meContext, jsWriter());
 		}
 
-		private void writeMainModelEnsuringJsAndDTs(ModelEnsuringContext meContext, Writer writer) throws IOException {
-			if (isCurrentGmCoreApi()) {
-				if (copyStaticDts())
-					writeTripleSlashReference(staticDtsFileName(aId), writer);
-				writeTripleSlashReference(jsinteropDtsFileName(aId), writer);
-			}
+		private void writeMainModelEnsuringDTs(ModelEnsuringContext meContext) throws IOException {
+			Writer writer = dtsWriter();
 
+			if (isCurrentGmCoreApi())
+				copyStaticDts(writer);
+
+			writeBlockComment(writer, "Types");
+			
 			ModelEnsuringDTsWriter.writeDts(meContext, writer);
+			TypeScriptWriterForModels.write(gmTypesDeclared, jsNameResolver, writer);
 		}
 
 		// If the name is confusing, check the implementation below to see the "meta" that's being exported.
@@ -574,10 +577,7 @@ public class GenerateNpmPackageTask extends Task {
 
 		private void writeMetaExportingDts(Writer writer) throws IOException {
 			// triple slashes
-			if (copyStaticDts())
-				writeTripleSlashReference(staticDtsFileName(aId), writer);
-			writeTripleSlashReference(jsinteropDtsFileName(aId), writer);
-			writer.append("\n");
+			copyStaticDts(writer);
 
 			writeImports(writer);
 
@@ -597,32 +597,34 @@ public class GenerateNpmPackageTask extends Task {
 			writer.append("}\n");
 		}
 
-		private void writeMainGwtTerminalDts() {
-			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(this::writeMainGwtTerminalDts);
-
-		}
-		private void writeMainGwtTerminalDts(Writer writer) throws IOException {
-			if (copyStaticDts())
-				writeTripleSlashReference(staticDtsFileName(aId), writer);
-			writeTripleSlashReference(jsinteropDtsFileName(aId), writer);
-			writer.append("\n");
+		private void writeMainGwtTerminalDts() throws IOException {
+			Writer writer = dtsWriter();
 
 			writeImports(writer);
+
+			copyStaticDts(writer);
 		}
 
-		private boolean copyStaticDts() {
+		private void copyStaticDts(Writer writer) throws IOException {
 			String staticFileName = staticDtsFileName(aId);
 			File staticDtsFile = new File(buildFolder.getParentFile(), "npm/" + staticFileName);
 			if (!staticDtsFile.exists())
-				return false;
+				return;
 
-			FileTools.write(outSrcFile(staticFileName)).usingWriter(writer -> {
-				writeTripleSlashReferenceToMain(aId, writer);
-				String staticContent = Files.readString(staticDtsFile.toPath());
-				writer.append(staticContent);
-			});
+			String staticContent = Files.readString(staticDtsFile.toPath());
+			writeBlockComment(writer, "Static");
+			writer.append(staticContent);
+			writer.append("\n");
+		}
 
-			return true;
+		private void writeBlockComment(Writer writer, String text) throws IOException {
+			writer.append("// ************\n");
+			writer.append("// " + text + "\n");
+			writer.append("// ************\n\n");
+		}
+
+		private static String staticDtsFileName(String artifactId) {
+			return artifactId + ".static.d.ts";
 		}
 
 		private void writeImports(Writer writer) throws IOException {
@@ -691,6 +693,42 @@ public class GenerateNpmPackageTask extends Task {
 		private String loadFromClasspath(String templateName) throws IOException {
 			URL templateUrl = getClass().getResource(templateName);
 			return IOTools.slurp(templateUrl, Charsets.UTF_8.name());
+		}
+
+		// ################################################
+		// ##. . . . . . . . . Writers. . . . . . . . . .##
+		// ################################################
+
+		private Writer dtsWriter() {
+			return dtsWriter != null ? dtsWriter : (dtsWriter = writerFor(outSrcFile(aId + ".d.ts")));
+		}
+
+		private Writer jsWriter() {
+			return jsWriter != null ? jsWriter : (jsWriter = writerFor(outSrcFile(aId + ".js")));
+		}
+
+		private Writer writerFor(File file) {
+			FileTools.ensureFolderExists(file.getParentFile());
+
+			try {
+				return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+			} catch (FileNotFoundException e) {
+				throw new UncheckedIOException(e);
+			}
+		}
+
+		private void closeWriters() {
+			close(dtsWriter);
+			close(jsWriter);
+		}
+
+		private void close(Writer writer) {
+			if (writer != null)
+				try {
+					writer.close();
+				} catch (IOException e) {
+					log.warn("Error while closing writer.", e);
+				}
 		}
 
 		// ################################################
