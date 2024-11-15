@@ -561,7 +561,7 @@ public class GenerateNpmPackageTask extends Task {
 			Writer writer = dtsWriter();
 
 			writeBlockComment(writer, "Types");
-			
+
 			ModelEnsuringDTsWriter.writeDts(meContext, writer);
 			TypeScriptWriterForModels.write(gmTypesDeclared, jsNameResolver, writer);
 
@@ -661,21 +661,28 @@ public class GenerateNpmPackageTask extends Task {
 
 		private String packageDepsAsString() {
 			if (deps.isEmpty())
-				return "";
+				return isCurrentGmCoreApi() ? "    " + hcJsBaseDep() : "";
 			else
 				return deps.stream() //
 						.map(this::toNpmDependencyString) //
 						.collect(Collectors.joining(",\n    ", "    ", ""));
 		}
 
+		private String hcJsBaseDep() {
+			return "\"@dev.hiconic/hc-js-base\": \"" + extractMajorMinorDotX(version /* gmCoreApi version */) + "\"";
+		}
+
 		private String toNpmDependencyString(VersionedArtifactIdentification dep) {
-			String version = dep.getVersion();
+			String majorMinorX = extractMajorMinorDotX(dep.getVersion());
+
+			return "\"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\": " + "\"" + majorMinorX + "\"";
+		}
+
+		private String extractMajorMinorDotX(String version) {
 			String path = StringTools.getSubstringAfterLast(version, ".");
 
 			String majorMinorDot = StringTools.removeLastNCharacters(version, path.length());
-			String majorMinorX = majorMinorDot + "x";
-
-			return "\"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\": " + "\"" + majorMinorX + "\"";
+			return majorMinorDot + "x";
 		}
 
 		private void writeNpmrcIfNeeded() {
