@@ -232,7 +232,7 @@
     <!-- Temporary task, for testing only -->
     <target name="make-npm-package obf" depends="prepare-compile-path, common-init">
         <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
-        <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
+        <copy file="war/tribefire.js" tofile="${dist}/npm/dist/${maven.project.artifactId}.js"/>
     </target>
 
     <target name="assemble obf" depends="clean obf">
@@ -249,7 +249,7 @@
         -->
         <!-- <delete file="war/tribefire.js"/> -->
         <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
-        <copy file="war/tribefire.js" tofile="${dist}/npm/src/${maven.project.artifactId}.js"/>
+        <copy file="war/tribefire.js" tofile="${dist}/npm/dist/${maven.project.artifactId}.js"/>
     </target>
 
     <target name="assemble" depends="assemble obf, assemble pretty">
