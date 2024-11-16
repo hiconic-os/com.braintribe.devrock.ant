@@ -554,7 +554,7 @@ public class GenerateNpmPackageTask extends Task {
 
 			writeMainModelEnsuringDTs(meContext);
 
-			ModelEnsuringJsWriter.writeJs(meContext, jsWriter());
+			ModelEnsuringJsWriter.writeJs(meContext, jsWriter(), isCurrentGmCoreApi());
 		}
 
 		private void writeMainModelEnsuringDTs(ModelEnsuringContext meContext) throws IOException {
