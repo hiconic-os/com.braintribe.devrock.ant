@@ -29,6 +29,11 @@
 		</bt:install>
 	</target>
 
+	<!-- TODO this was addes cause this build script doesn't depend on common-ant-script. Not sure why though. -->
+	<target name="check-linking" />
+		<echo message="Nothing to check in this artifact!"/>
+	</target>
+
 	<target name="publish" depends="init">
 		<property name="increaseVersion" value="true" />
 		<property name="skipGit" value="false" />
