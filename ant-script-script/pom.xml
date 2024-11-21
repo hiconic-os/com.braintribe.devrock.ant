@@ -20,7 +20,7 @@ limitations under the License.
         <version>[1.0,1.1)</version>
     </parent>
     <artifactId>ant-script-script</artifactId>
-    <version>1.0.26</version>
+    <version>1.0.27</version>
     <packaging>pom</packaging>
     <properties>
         <codebase>braintribe-dev</codebase>
