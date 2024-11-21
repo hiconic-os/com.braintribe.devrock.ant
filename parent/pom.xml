@@ -37,7 +37,7 @@ limitations under the License.
 			see e.g. org/apache/ant/ant-junit/1.10.14/ant-junit-1.10.14.pom.
 			Therefore, whenever updating the version of Ant (i.e. V.org.apache.ant), this should be updated accordingly. -->
 		<V.junit>4.13.2</V.junit>
-		<V.org.apache.ant>1.10.14</V.org.apache.ant>
+		<V.org.apache.ant>1.10.15</V.org.apache.ant>
 		<V.org.jacoco>0.8.1</V.org.jacoco>
 		<V.commons-cli>1.2</V.commons-cli>
 		<V.commons-io>2.5</V.commons-io>
