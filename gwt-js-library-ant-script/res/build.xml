@@ -219,7 +219,7 @@
        <!-- <delete file="war/tribefire.js"/> -->
         <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-pretty" 
                 resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}-dev" />
-        <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/src/${maven.project.artifactId}.js"/>
+        <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/dist/${maven.project.artifactId}.js"/>
     </target>
 
     <target name="clean obf" depends="compile obf">
