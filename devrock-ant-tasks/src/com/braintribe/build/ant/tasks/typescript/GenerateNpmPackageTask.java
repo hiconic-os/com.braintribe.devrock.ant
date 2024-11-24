@@ -258,15 +258,14 @@ public class GenerateNpmPackageTask extends Task {
 			writeNpmrcIfNeeded();
 		}
 
-		// jsinterop.d.ts, main.d.ts
 		private void writeGwtTerminalPackage() throws IOException {
 			resolveDepsAllModels();
 
 			addClassesFromDepsToRegularClasses();
 
-			writeMainGwtTerminalDts();
+			writeGwtTerminalDts();
 
-			writeJsinteropDts();
+			addJsinteropToDts();
 		}
 
 		private void writeModelPackage() throws IOException {
@@ -274,11 +273,9 @@ public class GenerateNpmPackageTask extends Task {
 
 			analyzeLocalClasses();
 
-			writeMainModelEnsuringJsAndDTs();
+			writeModelEnsuringJsAndDTs();
 		}
 
-		// GM CORE: types.dts, jsinterop.d.ts, main.d.ts main.js
-		// OTHERS: jsinterop.d.ts, main.d.ts main.js
 		private void writeTypeScriptDeclarationPackage() throws IOException {
 			if (isCurrentGmCoreApi())
 				// no resolveDeps needed --> gm-core-api doesn't depend on any model or dts artifact
@@ -290,11 +287,11 @@ public class GenerateNpmPackageTask extends Task {
 
 			// we only expect model types in gm-core-api, and we don't ensure them
 			if (isCurrentGmCoreApi())
-				writeMainModelEnsuringJsAndDTs();
+				writeModelEnsuringJsAndDTs();
 			else
-				writeMainMetaExportingJsAndDts();
+				writeMetaExportingJsAndDts();
 
-			writeJsinteropDts();
+			addJsinteropToDts();
 		}
 
 		// ################################################
@@ -541,7 +538,7 @@ public class GenerateNpmPackageTask extends Task {
 		// ##. . . . . . . . Write Files . . . . . . . . ##
 		// ################################################
 
-		private void writeJsinteropDts() throws IOException {
+		private void addJsinteropToDts() throws IOException {
 			Writer writer = dtsWriter();
 
 			writeBlockComment(writer, "JsInterop");
@@ -549,15 +546,15 @@ public class GenerateNpmPackageTask extends Task {
 			TypeScriptWriterForClasses.write(regularClasses, customGmTypeFilter, writer);
 		}
 
-		private void writeMainModelEnsuringJsAndDTs() throws IOException {
+		private void writeModelEnsuringJsAndDTs() throws IOException {
 			ModelEnsuringContext meContext = ModelEnsuringContext.createForNpm(gmTypesAll, gId, aId, version, deps);
 
-			writeMainModelEnsuringDTs(meContext);
+			writeModelEnsuringDTs(meContext);
 
 			ModelEnsuringJsWriter.writeJs(meContext, jsWriter(), isCurrentGmCoreApi());
 		}
 
-		private void writeMainModelEnsuringDTs(ModelEnsuringContext meContext) throws IOException {
+		private void writeModelEnsuringDTs(ModelEnsuringContext meContext) throws IOException {
 			Writer writer = dtsWriter();
 
 			writeBlockComment(writer, "Types");
@@ -570,7 +567,7 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		// If the name is confusing, check the implementation below to see the "meta" that's being exported.
-		private void writeMainMetaExportingJsAndDts() {
+		private void writeMetaExportingJsAndDts() {
 			FileTools.write(outSrcFile(aId + ".d.ts")).usingWriter(this::writeMetaExportingDts);
 			FileTools.write(outSrcFile(aId + ".js")).usingWriter(this::writeMetaExportingJs);
 		}
@@ -597,12 +594,18 @@ public class GenerateNpmPackageTask extends Task {
 			writer.append("}\n");
 		}
 
-		private void writeMainGwtTerminalDts() throws IOException {
+		private void writeGwtTerminalDts() throws IOException {
 			Writer writer = dtsWriter();
 
 			writeImports(writer);
 
+			writeExportInitHcJs(writer);
+
 			copyStaticDts(writer);
+		}
+
+		private void writeExportInitHcJs(Writer writer) throws IOException {
+			writer.append("export function initHcJs(T: any, hc: any): void;\n\n");
 		}
 
 		private void copyStaticDts(Writer writer) throws IOException {
