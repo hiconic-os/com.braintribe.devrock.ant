@@ -79,7 +79,7 @@ import com.braintribe.utils.lcd.NullSafe;
  * 
  * <h2>Configuring NPM repo URL for given artifact</h2>
  * 
- * To configure the npm repository URL for given artifact set property "npmRepoUrl" in its pom.xml.
+ * To configure the npm repository URL for given artifact set property "npmRegistryUrl" in its pom.xml.
  * <p>
  * <b>npmjs.com:</b> DON'T SET, THAT'S THE DEFAULT<br>
  * <b>GitHub:</b> https://npm.pkg.github.com
@@ -142,7 +142,7 @@ public class GenerateNpmPackageTask extends Task {
 
 		// Current Artifact
 		private final AnalysisArtifact currentArtifact = resolveCurrentProject();
-		private final String npmRepoUrl = resolveCurrentArtifactNpmRepoUrl();
+		private final String npmRegistryUrl = resolveCurrentArtifactNpmRegistryUrl();
 		private final NpmPackageScopedName npmPackageScopedName = resolveNpmPackageScopedName();
 
 		private final String gId = currentArtifact.getGroupId();
@@ -180,9 +180,9 @@ public class GenerateNpmPackageTask extends Task {
 			return (AnalysisArtifact) resolution.getTerminals().get(0);
 		}
 
-		private String resolveCurrentArtifactNpmRepoUrl() {
+		private String resolveCurrentArtifactNpmRegistryUrl() {
 			try {
-				return currentArtifact.getOrigin().getProperties().get("npmRepoUrl");
+				return currentArtifact.getOrigin().getProperties().get("npmRegistryUrl");
 			} catch (NullPointerException e) {
 				log.warn("Error while resolving npmRepoUrl property from pom.xml", e);
 				return null;
@@ -745,7 +745,7 @@ public class GenerateNpmPackageTask extends Task {
 		//
 
 		private void writeNpmrc() {
-			if (StringTools.isEmpty(npmRepoUrl))
+			if (StringTools.isEmpty(npmRegistryUrl))
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeDefaultNpmrcTo);
 			else
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeNpmrcTo);
@@ -756,16 +756,16 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		private void writeNpmrcTo(Writer w) throws IOException {
-			String npmRepoUrlWithoutProtocol = removeHttpProtocol(npmRepoUrl);
+			String npmRegistryUrlWithoutProtocol = removeHttpProtocol(npmRegistryUrl);
 
 			String template = loadFromClasspath("npmrc.txt");
 			String npmrc = template //
 					.replace("${NPM_SCOPE}", npmPackageScopedName.scope()) //
-					.replace("${NPM_REPO_URL}", npmRepoUrl) //
-					.replace("${NPM_REPO_URL_WITHOUT_PROTOCOL}", npmRepoUrlWithoutProtocol) //
+					.replace("${NPM_REGISTRY_URL}", npmRegistryUrl) //
+					.replace("${NPM_REGISTRY_URL_WITHOUT_PROTOCOL}", npmRegistryUrlWithoutProtocol) //
 			;
 
-			if (npmRepoUrlWithoutProtocol.contains("npm.pkg.github.com"))
+			if (npmRegistryUrlWithoutProtocol.contains("npm.pkg.github.com"))
 				npmrc = npmrc.replace("NODE_AUTH_TOKEN", "GITHUB_TOKEN");
 
 			w.append(npmrc);
