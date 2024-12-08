@@ -6,20 +6,11 @@
   "files": [
     "dist/**/*"
   ],
-  "type": "module",
-  "keywords": [
-    "hiconic"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/${GITHUB_ORG}/${GROUP_ID}.git"
-  },
+  "type": "module",${GIT_REPO_INFO}
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
 ${DEPENDENCIES}
-  },
-  "author": "dev.hiconic",
-  "license": "Apache-2.0"
+  }
 }

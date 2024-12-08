@@ -43,9 +43,11 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 
 import com.braintribe.build.ant.utils.DrAntTools;
+import com.braintribe.build.process.ProcessExecution;
 import com.braintribe.cfg.Required;
 import com.braintribe.common.lcd.UnknownEnumException;
 import com.braintribe.devrock.mc.api.commons.PartIdentifications;
+import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.logging.Logger;
 import com.braintribe.model.artifact.analysis.AnalysisArtifact;
 import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
@@ -65,6 +67,7 @@ import com.braintribe.model.typescript.ModelEnsuringJsWriter;
 import com.braintribe.model.typescript.TypeScriptWriterForClasses;
 import com.braintribe.model.typescript.TypeScriptWriterForModels;
 import com.braintribe.model.typescript.TypeScriptWriterHelper;
+import com.braintribe.model.typescript.TypeScriptWriterHelper.NpmPackageScopedName;
 import com.braintribe.model.version.Version;
 import com.braintribe.utils.FileTools;
 import com.braintribe.utils.IOTools;
@@ -73,6 +76,14 @@ import com.braintribe.utils.lcd.CollectionTools2;
 import com.braintribe.utils.lcd.NullSafe;
 
 /**
+ * 
+ * <h2>Configuring NPM repo URL for given artifact</h2>
+ * 
+ * To configure the npm repository URL for given artifact set property "npmRepoUrl" in its pom.xml.
+ * <p>
+ * <b>npmjs.com:</b> DON'T SET, THAT'S THE DEFAULT<br>
+ * <b>GitHub:</b> https://npm.pkg.github.com
+ * 
  * @author peter.gazdik
  */
 public class GenerateNpmPackageTask extends Task {
@@ -82,14 +93,11 @@ public class GenerateNpmPackageTask extends Task {
 	private static final String CLASS_FILE_SUFFIX = ".class";
 	private static final int CLASS_FILE_SUFFIX_LENGTH = CLASS_FILE_SUFFIX.length();
 
-	private static final String GITHUB_ORG = "hiconic-os";
-
 	private String npmPackagingStr;
 	private File buildFolder;
 	private File outputDir;
 	private String resolutionId;
 	private String npmPackageName;
-	private boolean generateNpmrc;
 
 	// @formatter:off
 	// doesn't exist for GWT terminals, but we use it to get the parent and navigate to possible static .d.ts files
@@ -100,8 +108,6 @@ public class GenerateNpmPackageTask extends Task {
 	/** Optional, defaults to artifactId.
 	 * For GWT terminals, the value for pretty build is "${artifactId}-dev. */
 	public void setNpmPackageName(String npmPackageName) { this.npmPackageName = npmPackageName;}
-	/** Optional, only for local testing and the npmrc is for GitHub (i.e. incompatible with npmjs-only package.json we generate) */
-	public void setGenerateNpmrc(boolean generateNpmrc) { this.generateNpmrc = generateNpmrc; }
 	// @formatter:on
 
 	public void setOutputDir(File outputDir) {
@@ -133,7 +139,11 @@ public class GenerateNpmPackageTask extends Task {
 		private final Function<Class<?>, String> jsNameResolver = TypeScriptWriterHelper.jsNameResolver(classLoader);
 		private final Predicate<Class<?>> customGmTypeFilter = createCustomGmTypeFilter(classLoader);
 		private final Set<String> modelArtifactNames = resolveModelArtifactNames();
+
+		// Current Artifact
 		private final AnalysisArtifact currentArtifact = resolveCurrentProject();
+		private final String npmRepoUrl = resolveCurrentArtifactNpmRepoUrl();
+		private final NpmPackageScopedName npmPackageScopedName = resolveNpmPackageScopedName();
 
 		private final String gId = currentArtifact.getGroupId();
 		private final String aId = currentArtifact.getArtifactId();
@@ -169,6 +179,26 @@ public class GenerateNpmPackageTask extends Task {
 		private AnalysisArtifact resolveCurrentProject() {
 			return (AnalysisArtifact) resolution.getTerminals().get(0);
 		}
+
+		private String resolveCurrentArtifactNpmRepoUrl() {
+			try {
+				return currentArtifact.getOrigin().getProperties().get("npmRepoUrl");
+			} catch (NullPointerException e) {
+				log.warn("Error while resolving npmRepoUrl property from pom.xml", e);
+				return null;
+			}
+		}
+
+		private NpmPackageScopedName resolveNpmPackageScopedName() {
+			String groupId = currentArtifact.getGroupId();
+			String packageSuffix = NullSafe.get(npmPackageName, currentArtifact.getArtifactId());
+
+			return TypeScriptWriterHelper.npmPackageFullName(groupId, packageSuffix);
+		}
+
+		// ################################################
+		// ##. . . . . . . . . . RUN . . . . . . . . . . ##
+		// ################################################
 
 		public void run() throws IOException {
 			determineNpmPackaging();
@@ -573,7 +603,6 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		private void writeMetaExportingDts(Writer writer) throws IOException {
-			// triple slashes
 			copyStaticDts(writer);
 
 			writeImports(writer);
@@ -632,11 +661,18 @@ public class GenerateNpmPackageTask extends Task {
 
 		private void writeImports(Writer writer) throws IOException {
 			for (VersionedArtifactIdentification dep : deps)
-				writer.append("import \"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\";\n");
+				writer.append("import \"" + TypeScriptWriterHelper.npmPackageFullName(dep).fullName() + "\";\n");
 			if (!deps.isEmpty())
 				writer.append("\n");
 		}
 
+		//
+		// package.json
+		//
+
+		// TODO, this used to be in the package.json, we need to have this but configurable, maybe read it from the pom.xml
+		// "author": "dev.hiconic",
+		// "license": "Apache-2.0"
 		private void writePackageJson() {
 			FileTools.write(outFile("package.json")).usingWriter(this::writePackageJsonTo);
 		}
@@ -644,31 +680,28 @@ public class GenerateNpmPackageTask extends Task {
 		private void writePackageJsonTo(Writer w) throws IOException {
 			String template = loadFromClasspath("package.json");
 
-			String groupId = currentArtifact.getGroupId();
-			String packageSuffix = NullSafe.get(npmPackageName, currentArtifact.getArtifactId());
-
-			String fullPackageName = TypeScriptWriterHelper.npmPackageFullName(groupId, packageSuffix);
-
 			String deps = packageDepsAsString();
 
 			String packageJson = template //
-					.replace("${GITHUB_ORG}", GITHUB_ORG) //
-					.replace("${FULL_PACKAGE_NAME}", fullPackageName) //
-					.replace("${VERSION}", currentArtifact.getVersion()) //
-					.replace("${ARTIFACT_ID}", currentArtifact.getArtifactId()) //
-					.replace("${GROUP_ID}", groupId) //
+					.replace("${GIT_REPO_INFO}", repoInfoForPackageJson()) //
+					.replace("${FULL_PACKAGE_NAME}", npmPackageScopedName.fullName()) //
+					.replace("${VERSION}", version) //
+					.replace("${ARTIFACT_ID}", aId) //
 					.replace("${DEPENDENCIES}", deps);
 
 			w.append(packageJson);
 		}
 
 		private String packageDepsAsString() {
+			if (isCurrentGmCoreApi())
+				return "    " + hcJsBaseDep();
+
 			if (deps.isEmpty())
-				return isCurrentGmCoreApi() ? "    " + hcJsBaseDep() : "";
-			else
-				return deps.stream() //
-						.map(this::toNpmDependencyString) //
-						.collect(Collectors.joining(",\n    ", "    ", ""));
+				return "";
+
+			return deps.stream() //
+					.map(this::toNpmDependencyString) //
+					.collect(Collectors.joining(",\n    ", "    ", ""));
 		}
 
 		private String hcJsBaseDep() {
@@ -678,7 +711,7 @@ public class GenerateNpmPackageTask extends Task {
 		private String toNpmDependencyString(VersionedArtifactIdentification dep) {
 			String majorMinorX = extractMajorMinorDotX(dep.getVersion());
 
-			return "\"" + TypeScriptWriterHelper.npmPackageFullName(dep) + "\": " + "\"" + majorMinorX + "\"";
+			return "\"" + TypeScriptWriterHelper.npmPackageFullName(dep).fullName() + "\": " + "\"" + majorMinorX + "\"";
 		}
 
 		private String extractMajorMinorDotX(String version) {
@@ -688,16 +721,61 @@ public class GenerateNpmPackageTask extends Task {
 			return majorMinorDot + "x";
 		}
 
+		private String repoInfoForPackageJson() {
+			Maybe<String> resultMaybe = ProcessExecution.runCommand(outputDir, "git", "config", "--get", "remote.origin.url");
+			if (!resultMaybe.isSatisfied())
+				return "";
+
+			String gitRepoUrl = resultMaybe.get();
+
+			gitRepoUrl = ensureGitRepoUrlIsOfHttpKind(gitRepoUrl);
+
+			StringBuilder sb = new StringBuilder();
+			sb.append("\n");
+			sb.append("  \"repository\": {\n");
+			sb.append("    \"type\": \"git\",\n");
+			sb.append("    \"url\": \"git+" + gitRepoUrl + ".git\"\n");
+			sb.append("  },");
+
+			return sb.toString();
+		}
+
+		//
+		// .npmrc
+		//
+
 		private void writeNpmrcIfNeeded() {
-			if (generateNpmrc)
+			if (StringTools.isEmpty(npmRepoUrl))
+				FileTools.write(outFile(".npmrc")).usingWriter(this::writeDefaultNpmrcTo);
+			else
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeNpmrcTo);
 		}
 
+		private void writeDefaultNpmrcTo(Writer w) throws IOException {
+			w.append("//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}");
+		}
+
 		private void writeNpmrcTo(Writer w) throws IOException {
-			String template = loadFromClasspath("npmrc");
-			String npmrc = template.replace("${GITHUB_ORG}", GITHUB_ORG);
+			String npmRepoUrlWithoutProtocol = removeHttpProtocol(npmRepoUrl);
+
+			String template = loadFromClasspath("npmrc.txt");
+			String npmrc = template //
+					.replace("${NPM_SCOPE}", npmPackageScopedName.scope()) //
+					.replace("${NPM_REPO_URL}", npmRepoUrl) //
+					.replace("${NPM_REPO_URL_WITHOUT_PROTOCOL}", npmRepoUrlWithoutProtocol) //
+			;
 
 			w.append(npmrc);
+		}
+
+		private String removeHttpProtocol(String url) {
+			if (url.startsWith("http://"))
+				return url.substring("http://".length());
+
+			if (url.startsWith("https://"))
+				return url.substring("https://".length());
+
+			return url;
 		}
 
 		private String loadFromClasspath(String templateName) throws IOException {
@@ -791,6 +869,22 @@ public class GenerateNpmPackageTask extends Task {
 		typeScriptDeclaration,
 		gwtTerminal,
 		model
+	}
+
+	/* package */ static String ensureGitRepoUrlIsOfHttpKind(String gitRepoUrl) {
+		if (!gitRepoUrl.startsWith("git@"))
+			return gitRepoUrl;
+
+		// E.G.: git@github.com:hiconic-os/my-repo.git
+
+		// @formatter:off
+		String url = gitRepoUrl;
+		url = url.replace(":","/" ); 						// replace : with /
+		url = "https://" + url.substring("git@".length()); 	// replace git@ with https://
+		url = url.substring(0, url.length() - 4); 			// remove .git at the end
+		// @formatter:on
+
+		return url;
 	}
 
 }

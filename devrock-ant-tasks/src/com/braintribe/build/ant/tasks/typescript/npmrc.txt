@@ -1,0 +1,2 @@
+@${NPM_SCOPE}:registry=${NPM_REPO_URL}
+//${NPM_REPO_URL_WITHOUT_PROTOCOL}/:_authToken=${NODE_AUTH_TOKEN}
