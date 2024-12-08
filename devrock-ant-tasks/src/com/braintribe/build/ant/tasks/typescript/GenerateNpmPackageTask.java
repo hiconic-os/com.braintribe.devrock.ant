@@ -285,7 +285,7 @@ public class GenerateNpmPackageTask extends Task {
 			closeWriters();
 
 			writePackageJson();
-			writeNpmrcIfNeeded();
+			writeNpmrc();
 		}
 
 		private void writeGwtTerminalPackage() throws IOException {
@@ -744,7 +744,7 @@ public class GenerateNpmPackageTask extends Task {
 		// .npmrc
 		//
 
-		private void writeNpmrcIfNeeded() {
+		private void writeNpmrc() {
 			if (StringTools.isEmpty(npmRepoUrl))
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeDefaultNpmrcTo);
 			else
@@ -764,6 +764,9 @@ public class GenerateNpmPackageTask extends Task {
 					.replace("${NPM_REPO_URL}", npmRepoUrl) //
 					.replace("${NPM_REPO_URL_WITHOUT_PROTOCOL}", npmRepoUrlWithoutProtocol) //
 			;
+
+			if (npmRepoUrlWithoutProtocol.contains("npm.pkg.github.com"))
+				npmrc = npmrc.replace("NODE_AUTH_TOKEN", "GITHUB_TOKEN");
 
 			w.append(npmrc);
 		}
