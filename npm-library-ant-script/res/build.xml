@@ -35,6 +35,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<target name="dist" depends="clean, init" >
 		<mkdir dir="dist/npm/dist"/>
+		<copy file=".npmrc" tofile="dist/npm/.npmrc"/>
 		<copy file="package-dist.json" tofile="dist/npm/package.json"/>
 		<copy toDir="dist/npm/dist">
 			<fileset dir="src" />
