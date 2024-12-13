@@ -36,8 +36,6 @@
         <property name="distributableName" value="tribefire-js"/>
         <!-- Create the time stamp -->
         <tstamp/>
-        <!-- Create the build directory structure used by compile -->
-        <!--<mkdir dir="${build}"/> -->
 
         <!-- Current GWT version requires Java 8, therefore the respective environment variable has to be set.
             Note that java executable property is called 'java4gwt.executable' (and not 'java.executable'),
@@ -162,40 +160,6 @@
         <!--<move file="war/grindlebone/grindlebone.nocache.js" tofile="war/grindlebone/gb.js"/>-->
     </target>
 
-    <target name="dist" depends="compile pretty">
-        <bt:pom file="pom.xml" id="serverSupport.project"/>
-        <bt:dependencies useScope="runtime">
-            <pom refid="serverSupport.project"/>
-            <filesetTarget id="serverSupport.fileset" type=":war"/>
-        </bt:dependencies>
-        <!-- Delete lib folder to make sure we don't use any old libs. -->
-        <!--<delete dir="war/WEB-INF/lib"/>
-        <mkdir dir="war/WEB-INF/lib"/> -->
-        <!-- Extract to 'war' folder. This (also) copies jar files to war/WEB-INF/lib. -->
-        <!--
-        <unwar dest="war">
-            <resources refid="serverSupport.fileset"/>
-            <patternset>
-                <exclude name="WEB-INF/web.xml"/>
-            </patternset>
-        </unwar>
-
-        <fileset id="serverSupport.build.fileset" dir="war/WEB-INF/lib"/>
-        <pathconvert refid="serverSupport.build.fileset" property="serverSupport.build.path"/>
-
-        <exec executable="java" failonerror="true">
-            <arg value="-Xmx1024M"/>
-            <arg value="-cp"/>
-            <arg value="${serverSupport.build.path}"/>
-            <arg value="com.braintribe.build.gwt.symbol.SymbolTransformer"/>
-            <arg value="${gwt-deploy}/grindlebone"/>
-        </exec>
-
-        <property name="symbolMapsDist" value="war/WEB-INF/symbolMaps"/>
-        <mkdir dir="${symbolMapsDist}"/>
-        <copy file="${gwt-deploy}/grindlebone/symbolMaps/mergedSymbols" todir="${symbolMapsDist}"/> -->
-    </target>
-
     <target name="clean pretty" depends="compile pretty">
         <move file="war/tfjs/tfjs.nocache.js" tofile="war/tribefire.js"/>
         <replace file="war/tribefire.js" token="{tf-version}" value="${maven.project.version}"/>
@@ -293,22 +257,6 @@
             <attach file="asset.man" type="asset:man"/>
         </bt:install>
     </target>
-    <!--
-    <target name="compile-generate" depends="assemble">
-        <javac srcdir="src" destdir="bin" includeantruntime="false" classpathref="compile.classpath" />
-    </target>
-
-    <target name="jar-generate" depends="compile-generate">
-        <jar destfile="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" basedir="bin">
-            <manifest>
-                <attribute name="Main-Class" value="com.braintribe.gwt.tribefirejs.client.generator.TribefireJsGenerator"/>
-            </manifest>
-        </jar>
-    </target>
-
-    <target name="run-generate" depends="jar-generate">
-        <java jar="build/com/braintribe/gwt/tribefirejs/client/generator/TribefireJsGenerator.jar" fork="true"></java>
-    </target> -->
 
     <target name="release">
         <bt:release buildDir="."/>
