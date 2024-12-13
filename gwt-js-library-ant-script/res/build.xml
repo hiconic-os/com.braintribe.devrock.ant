@@ -49,7 +49,7 @@
                 </not>
             </condition>
         </fail>
-        <property name="java4gwt.executable" value="${env.JAVA_8_HOME}${file.separator}bin${file.separator}java" />
+        <property name="java4gwt.executable" value="${env.JAVA_8_HOME}${file.separator}bin${file.separator}java"/>
     </target>
 
     <target depends="init" name="create-packaging-info">
@@ -59,7 +59,7 @@
 
     <target name="prepare-compile-path" depends="init">
         <bt:dependencies filesetId="compiler.fileset" useScope="runtime">
-            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl" />
+            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl"/>
         </bt:dependencies>
         <path id="gwt.compile.path">
             <resources refid="compile.sources.fileset"/>
@@ -67,20 +67,20 @@
             <resources refid="compiler.fileset"/>
             <pathelement location="${src}"/>
         </path>
-        <!--<pathconvert property="compilePath" refid="gwt.compile.path" />-->
+        <!--<pathconvert property="compilePath" refid="gwt.compile.path"/>-->
         <pathconvert pathsep="&#10;" property="rawCompilePath" refid="gwt.compile.path"/>
-        <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-dev-namespace" prepend="true" />
+        <bt:permutePath path="${rawCompilePath}" pathSeparator="&#10;" property="compilePath" selector="gwt-dev-namespace" prepend="true"/>
         <echo file=".gwt-compile-classpath" message="${compilePath}"/>
         <echo message="running gwt compiler with: ${java4gwt.executable}"/>
         <bt:dependencies filesetId="classloader.classpath" useScope="runtime">
-            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)" />
+            <dependency groupId="com.braintribe.devrock" artifactId="file-classpath-classloader" version="[2.0,2.1)"/>
         </bt:dependencies>
         <pathconvert property="classloader.classpath.string" refid="classloader.classpath"/>
         <echo message="FileClassPathLoader CP: ${classloader.classpath.string}"/>
 
         <bt:dependencies resolutionId="npm.classpath" useScope="runtime">
             <bt:pom file="pom.xml" id="pom"/>
-            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl" />
+            <dependency groupId="com.google.gwt" artifactId="gwt-dev" version="2.8.0" exclusions="xerces:xercesImpl"/>
         </bt:dependencies>
     </target>
 
@@ -94,8 +94,8 @@
         <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
             <!-- Uncomment for remote debugging -->
             <!--
-            <arg value="-Xdebug" />
-            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y" />
+            <arg value="-Xdebug"/>
+            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y"/>
             -->
             <arg value="-Xmx4096M"/>
             <arg value="-cp"/>
@@ -131,8 +131,8 @@
         <exec executable="${java4gwt.executable}" failonerror="true" newenvironment="true">
             <!-- Uncomment for remote debugging -->
             <!--
-            <arg value="-Xdebug" />
-            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y" />
+            <arg value="-Xdebug"/>
+            <arg value="-Xrunjdwp:server=y,transport=dt_socket,address=4000,suspend=y"/>
             -->
             <arg value="-Xmx4096M"/>
             <arg value="-cp"/>
@@ -203,7 +203,20 @@
         <delete dir="war/tfjs"/>
     </target>
 
-    <target name="assemble pretty" depends="clean pretty">
+    <target name="determine-if-hiconic-runtime" depends="init">
+        <if>
+            <and>
+                <equals arg1="${maven.project.groupId}" arg2="tribefire.js"/>
+                <equals arg1="${maven.project.artifactId}" arg2="tf-js"/>
+            </and>
+            <then>
+                <property name="publishAsHiconicRuntime" value="true"/>
+                <echo message="FYI: This GWT terminal will also be published as @dev.hiconic/runtime NPM package."/>
+            </then>
+        </if>
+    </target>
+
+    <target name="assemble pretty" depends="clean pretty, determine-if-hiconic-runtime">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName}.js.zip</echo>
         <zip destfile="${dist}/assembled/${versionedName}.js.zip">
@@ -212,14 +225,20 @@
             </fileset>
         </zip>
 
-        <!--
-        <echo level="info">Generating Pretty Build ${dist}/assembled/${versionedName-debug}.zip</echo>
-        <zip basedir="war" destfile="${dist}/assembled/${versionedName-debug}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
-        -->
-       <!-- <delete file="war/tribefire.js"/> -->
-        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-pretty" 
-                resolutionId="npm.classpath" npmPackageName="${maven.project.artifactId}-dev" />
+        <!-- Prepare NPM dev package -->
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-pretty" resolutionId="npm.classpath"
+                npmPackageName="${maven.project.artifactId}-dev"/>
         <copy file="war/tribefire.js" tofile="${dist}/npm-pretty/dist/${maven.project.artifactId}.js"/>
+
+        <!-- Prepare NPM dev package (if relevant) as @dev.hiconic/runtime-dev -->
+        <if>
+            <isset property="publishAsHiconicRuntime"/>
+            <then>
+                <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-runtime-pretty" resolutionId="npm.classpath"
+                        npmPackageScope="dev.hiconic" npmPackageName="runtime-dev"/>
+                <copy file="war/tribefire.js" tofile="${dist}/npm-runtime-pretty/dist/${maven.project.artifactId}.js"/>
+            </then>
+        </if>
     </target>
 
     <target name="clean obf" depends="compile obf">
@@ -231,11 +250,11 @@
 
     <!-- Temporary task, for testing only -->
     <target name="make-npm-package obf" depends="prepare-compile-path, common-init">
-        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath"/>
         <copy file="war/tribefire.js" tofile="${dist}/npm/dist/${maven.project.artifactId}.js"/>
     </target>
 
-    <target name="assemble obf" depends="clean obf">
+    <target name="assemble obf" depends="clean obf, determine-if-hiconic-runtime">
         <mkdir dir="${dist}/assembled"/>
         <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName}-min.js.zip</echo>
         <zip destfile="${dist}/assembled/${versionedName}-min.js.zip">
@@ -243,13 +262,20 @@
                 <include name ="tribefire.js"/>
             </fileset>
         </zip>
-        <!--
-        <echo level="info">Generating OBF Build ${dist}/assembled/${versionedName-runtime}.zip</echo>
-        <zip basedir="war" destfile="${dist}/assembled/${versionedName-runtime}.zip" excludes="**/.svn, **/gwt-user.jar, **/gwt-dev.jar"/>
-        -->
-        <!-- <delete file="war/tribefire.js"/> -->
-        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath" />
+
+        <!-- Prepare NPM package -->
+        <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm" resolutionId="npm.classpath"/>
         <copy file="war/tribefire.js" tofile="${dist}/npm/dist/${maven.project.artifactId}.js"/>
+
+        <!-- Prepare NPM package (if relevant) as @dev.hiconic/runtime -->
+        <if>
+            <isset property="publishAsHiconicRuntime"/>
+            <then>
+                <bt:npm npmPackaging="gwtTerminal" buildFolder="${build}" outputDir="${dist}/npm-runtime" resolutionId="npm.classpath"
+                        npmPackageScope="dev.hiconic" npmPackageName="runtime"/>
+                <copy file="war/tribefire.js" tofile="${dist}/npm-runtime/dist/${maven.project.artifactId}.js"/>
+            </then>
+        </if>
     </target>
 
     <target name="assemble" depends="assemble obf, assemble pretty">

@@ -97,6 +97,7 @@ public class GenerateNpmPackageTask extends Task {
 	private File buildFolder;
 	private File outputDir;
 	private String resolutionId;
+	private String npmPackageScope;
 	private String npmPackageName;
 
 	// @formatter:off
@@ -105,6 +106,8 @@ public class GenerateNpmPackageTask extends Task {
 	@Required public void setBuildFolder(File buildFolder) { this.buildFolder = buildFolder; }
 	public void setResolutionId(String resolutionId) { this.resolutionId = resolutionId; }
 
+	/** Typically not set, only used for a second deployment of tf-js under the name {@code @dev.hiconic/runtime. } */
+	public void setNpmPackageScope(String npmPackageScope) { this.npmPackageScope = npmPackageScope; }
 	/** Optional, defaults to artifactId.
 	 * For GWT terminals, the value for pretty build is "${artifactId}-dev. */
 	public void setNpmPackageName(String npmPackageName) { this.npmPackageName = npmPackageName;}
@@ -190,6 +193,9 @@ public class GenerateNpmPackageTask extends Task {
 		}
 
 		private NpmPackageScopedName resolveNpmPackageScopedName() {
+			if (npmPackageScope != null)
+				return new NpmPackageScopedName(npmPackageScope, npmPackageName);
+
 			String groupId = currentArtifact.getGroupId();
 			String packageSuffix = NullSafe.get(npmPackageName, currentArtifact.getArtifactId());
 
@@ -253,7 +259,8 @@ public class GenerateNpmPackageTask extends Task {
 				return false;
 
 			return isProblem(buildFolder == null, "buildFolder not specified")
-					|| isProblem(!buildFolder.isDirectory(), "buildFolder is not an existing directory: " + buildFolder.getAbsolutePath());
+					|| isProblem(!buildFolder.isDirectory(), "buildFolder is not an existing directory: " + buildFolder.getAbsolutePath())
+					|| isProblem(npmPackageScope != null && npmPackageName == null, "npmPackageName must be set if npmPackageScope is set");
 		}
 
 		private boolean isProblem(boolean test, String msg) {
