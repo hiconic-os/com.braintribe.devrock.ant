@@ -3,10 +3,4 @@
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="install">
 	<bt:import artifact="com.braintribe.devrock.ant:library-ant-script#1.0" useCase="DEVROCK"/>
 
-	<target name="make-jsinterop" depends="clean">
-		<copy todir="${dist}/jsinterop">
-		  <fileset dir="res"/>
-		</copy>
-	</target>
-
 </project>

@@ -41,14 +41,12 @@ You should have received a copy of the GNU Lesser General Public License along w
 				<isset property="generateOptionals" />
 			</not>
 			<then>
-				<property name="generateJsinterop" value="true"/>
 				<property name="generateNpmPackage" value="true"/>
 			</then>
 		</if>
 		<!-- Now we set everything else to "generateOptionals" or "false" if "generateOptionals"
 			wasn't specified -->
 		<property name="generateOptionals" value="false"/>
-		<property name="generateJsinterop" value="true"/>
 		<property name="generateNpmPackage" value="true"/>
 		<property name="generateJavadoc" value="${generateOptionals}"/>
 		<bt:pom id="pom.project" file="pom.xml" />
@@ -293,14 +291,5 @@ You should have received a copy of the GNU Lesser General Public License along w
 			</then>
 		</if>
 	</target>
-	<target name="dist-jsinterop" depends="make-jsinterop">
-		<if>
-			<available file="${dist}/jsinterop" type="dir"/>
-			<then>
-				<zip basedir="${dist}/jsinterop" destfile="${dist}/${versionedName}.js.zip"/>
-			</then>
-		</if>
-	</target>
-	<target name="make-jsinterop" />
 	<target name="make-npm-package" />
 </project>

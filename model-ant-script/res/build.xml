@@ -65,19 +65,6 @@
 		</if>		
 	</target>
 	
-	<target name="make-jsinterop" depends="clean, compile">
-		<if>
-			<istrue value="${generateJsinterop}" />
-			<then>
-				<bt:dependencies solutionListFile="${dist}/solutions.txt" useScope="runtime">
-					<!-- TODO: use refid instead here -->
-					<bt:pom file="pom.xml" id="pom"/>
-				</bt:dependencies>
-				<bt:tfjs buildFolder="${build}" solutionListFile="${dist}/solutions.txt" outputDir="${dist}/jsinterop" />
-			</then>
-		</if>
-	</target>
-
 	<target name="make-npm-package" depends="clean, compile">
 		<if>
 			<istrue value="${generateNpmPackage}" />
@@ -90,7 +77,7 @@
 		</if>
 	</target>
 
-	<target name="dist" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license, make-npm-package">
+	<target name="dist" depends="clean, compile, update-manifest, dist-javadoc, dist-jar-license, make-npm-package">
 		<mkdir dir="${dist}/lib"/>
 		<jar basedir="${build}" jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF"/>
 		<jar basedir="${src}" jarfile="${dist}/${versionedName}-sources.jar"/>

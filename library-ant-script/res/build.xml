@@ -17,16 +17,10 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<target name="compile" depends="init, javadoc, generate-artifact-reflection">
 		<if>
-			<or>
-				<and>
-					<istrue value="${pom.project.properties.jsinterop}" />
-					<istrue value="${generateJsinterop}" />
-				</and>
-				<and>
-					<isset property="pom.project.properties.npmPackaging" />
-					<istrue value="${generateNpmPackage}" />
-				</and>
-			</or>
+			<and>
+				<isset property="pom.project.properties.npmPackaging" />
+				<istrue value="${generateNpmPackage}" />
+			</and>
 			<!-- Generate metadata for reflection on method parameters -->
 			<then><property name="parametersOption" value="-parameters"/></then>
 			<else><property name="parametersOption" value=""/></else>
@@ -90,21 +84,6 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</if>
 	</target>
 
-	<target name="make-jsinterop" depends="clean, compile">
-		<if>
-			<and>
-				<istrue value="${pom.project.properties.jsinterop}" />
-				<istrue value="${generateJsinterop}" />
-			</and>
-			<then>
-				<bt:dependencies solutionListFile="${dist}/solutions.txt" useScope="compile">
-					<bt:pom file="pom.xml" id="pom"/>
-				</bt:dependencies>
-				<bt:tfjs buildFolder="${build}" solutionListFile="${dist}/solutions.txt" outputDir="${dist}/jsinterop" />
-			</then>
-		</if>
-	</target>
-
 	<target name="make-npm-package" depends="clean, compile">
 		<if>
 			<and>
@@ -123,7 +102,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<!-- specialized library-ant-scripts can reuse this to create ${versionedName}.jar, ${versionedName}-sources.jar -->
 	<!-- and (via dependency targets) ${versionedName}-javadoc.jar -->
-	<target name="dist-main" depends="clean, compile, update-manifest, dist-javadoc, dist-jsinterop, dist-jar-license, make-npm-package">
+	<target name="dist-main" depends="clean, compile, update-manifest, dist-javadoc, dist-jar-license, make-npm-package">
 		<jar jarfile="${dist}/lib/${versionedName}.jar" manifest="${META-INF}/MANIFEST.MF">
 			<fileset dir="${build}"/>
 		</jar>
