@@ -166,6 +166,19 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</if>
 
 		<chmod file="${dist}/application/bin/*" perm="754"/>
+
+		<if>
+			<available file="conf" type="dir"/>
+			<then>
+				<echo message="Packaging application configuration"/>
+				<copy todir="${dist}/application/conf" overwrite="true">
+					<fileset dir="conf">
+						<include name="**/*.*"/>
+					</fileset>
+				</copy>
+			</then>
+		</if>
+
 	</target>
 
 	<target name="assemble" depends="dist">
