@@ -20,20 +20,20 @@ You should have received a copy of the GNU Lesser General Public License along w
 				<fail message="Cannot build release view, pom.xml is not marked properly. Add property: &lt;release-view&gt;true&lt;/release-view&gt;" />
 			</then>
 		</if>
+	</target>
 
-		<mkdir dir="dist"/>
+	<target name="update-release-versions" depends="dist">
 		<bt:buildReleaseView
 			configuration="release-configuration.yaml"
 			displayName="${pom.project.groupId}:${pom.project.artifactId}#${pom.project.version}"
-			outputFile="${dist}/${versionedName}-repositoryview.yaml" />
+			outputFile="repositoryview.yaml" />
 	</target>
 
 	<target name="install" depends="dist">
 		<bt:install>
 			<pom refid="pom.project"/>
-			<attach file="dist/${versionedName}-repositoryview.yaml" type="repositoryview:yaml" />
+			<attach file="repositoryview.yaml" type="repositoryview:yaml" />
 			<attach file="release-notes.md" type="notes:md" skipIfNoFile="true" />
 		</bt:install>
 	</target>
-
 </project>
