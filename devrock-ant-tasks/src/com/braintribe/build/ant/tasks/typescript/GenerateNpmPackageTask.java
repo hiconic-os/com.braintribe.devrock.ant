@@ -752,7 +752,7 @@ public class GenerateNpmPackageTask extends Task {
 		//
 
 		private void writeNpmrc() {
-			if (StringTools.isEmpty(npmRegistryUrl))
+			if (StringTools.isEmpty(npmRegistryUrl) || npmRegistryUrl.startsWith("https://registry.npmjs.org") )
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeDefaultNpmrcTo);
 			else
 				FileTools.write(outFile(".npmrc")).usingWriter(this::writeNpmrcTo);
