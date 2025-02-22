@@ -14,25 +14,20 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.tools.ant.BuildEvent;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.DefaultLogger;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 
 import com.braintribe.build.ant.mc.Bridges;
 import com.braintribe.build.ant.mc.McBridge;
-import com.braintribe.build.ant.tasks.extractor.fileset.FileSetTargetProcessor;
 import com.braintribe.build.ant.tasks.extractor.fileset.ResourceCollectionTargetProcessor;
 import com.braintribe.build.ant.tasks.malaclypse.ArtifactExclusionList;
 import com.braintribe.build.ant.tasks.malaclypse.ArtifactListProducer;
@@ -52,7 +47,6 @@ import com.braintribe.codec.marshaller.yaml.YamlMarshaller;
 import com.braintribe.common.lcd.Pair;
 import com.braintribe.console.ConsoleOutputs;
 import com.braintribe.console.output.ConfigurableConsoleOutputContainer;
-import com.braintribe.logging.Logger;
 import com.braintribe.model.artifact.PartTuple;
 import com.braintribe.model.artifact.PartType;
 import com.braintribe.model.artifact.Solution;
@@ -165,7 +159,7 @@ import com.braintribe.utils.StringTools;
  *
  */
 public class DependenciesTask extends Task implements HasLoggingConfiguration  {
-private static Logger log = Logger.getLogger(DependenciesTask.class);
+
 	private String filesetId;
 	private String sourcesFilesetId;
 	private String javadocFilesetId;
@@ -189,7 +183,6 @@ private static Logger log = Logger.getLogger(DependenciesTask.class);
 	
 	
 	private String artifact;
-	private boolean addSelf = false;
 	
 	
 	private final List<com.braintribe.build.ant.types.Dependency> injectedDependencies = new ArrayList<com.braintribe.build.ant.types.Dependency>();
@@ -260,9 +253,12 @@ private static Logger log = Logger.getLogger(DependenciesTask.class);
 	public void setArtifact(String artifact) {
 		this.artifact = artifact;
 	}
+
+	/** @deprecated This never had any effect... */
+	@Deprecated
 	@Configurable
-	public void setAddSelf(boolean addSelf) {
-		this.addSelf = addSelf;
+	public void setAddSelf(@SuppressWarnings("unused") boolean addSelf) {
+		/* This never did anything...*/
 	}
 	@Configurable
 	public void setExclusionDependency(String exclusionDependency) {
@@ -310,51 +306,6 @@ private static Logger log = Logger.getLogger(DependenciesTask.class);
 	@Override
 	public void execute() throws BuildException {
 		ParallelBuildTools.runGloballySynchronizedRepoRelatedTask(this::_execute);
-	}
-	
-	private class LogAppendable implements Appendable {
-
-		StringBuilder buffer = new StringBuilder();
-		private final DefaultLogger logger; 
-		
-		public LogAppendable(PrintStream stream) {
-			logger = new DefaultLogger() {{
-				out = stream;
-			}};
-			logger.setMessageOutputLevel(Project.MSG_INFO);
-		}
-		
-		@Override
-		public Appendable append(CharSequence csq) throws IOException {
-			append(csq, 0, csq.length());
-			return this;
-		}
-
-		@Override
-		public Appendable append(CharSequence csq, int start, int end) throws IOException {
-			for (int i = start; i < end; i++) {
-				append(csq.charAt(i));
-			}
-			
-			return this;
-		}
-
-		@Override
-		public Appendable append(char c) throws IOException {
-			
-			if (c == '\n') {
-				BuildEvent messageEvent = new BuildEvent(DependenciesTask.this);
-				messageEvent.setMessage(buffer.toString(), Project.MSG_INFO);
-				logger.messageLogged(messageEvent);
-				
-				buffer.setLength(0);
-			}
-			else {
-				buffer.append(c);
-			}
-			
-			return this;
-		}
 	}
 	
 	private void _execute() throws BuildException {

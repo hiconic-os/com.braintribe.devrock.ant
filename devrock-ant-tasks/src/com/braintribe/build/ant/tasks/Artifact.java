@@ -103,7 +103,7 @@ public class Artifact extends Task {
 
 	@Override
 	public void execute() throws BuildException {	
-		
+		/*NO OP*/
 	}
 	
 	private Artifact getSibling() { 

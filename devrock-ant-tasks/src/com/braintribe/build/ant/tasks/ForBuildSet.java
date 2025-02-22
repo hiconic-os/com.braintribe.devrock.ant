@@ -8,8 +8,6 @@
 
 package com.braintribe.build.ant.tasks;
 
-import java.util.Set;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
@@ -23,7 +21,7 @@ import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
 /**
  * Abstract {@link Task} which operates on multiple artifacts, given as {@link #setBuildSetRefId(String) buildSet}. Given {@link BuildSet} is resolved
  * to artifacts and topologically sorted with dependencies first. The solutions are then passed to the
- * {@link #process(CodebaseAwareBuildDependencyResolutionContract, Set)} method.
+ * {@link #process} method.
  */
 public abstract class ForBuildSet extends Task {
 	private static Logger log = Logger.getLogger(ForBuildSet.class);

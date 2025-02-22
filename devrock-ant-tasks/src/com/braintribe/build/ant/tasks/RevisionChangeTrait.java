@@ -106,13 +106,6 @@ public interface RevisionChangeTrait {
 		out.renameTo( jsonPackageFile);	
 	}
 
-	/**
-	 * writes the revision to a pom file
-	 * @param pomFile - 
-	 * @param pomAsDocument
-	 * @param revisionE
-	 * @param revision
-	 */
 	default void writeVersionToPom(File pomFile, Document pomAsDocument, Version version) {
 		// modify revision to target version
 		setVersion(pomAsDocument, version);

@@ -8,7 +8,6 @@
 package com.braintribe.build.ant.tasks;
 
 import java.io.File;
-import java.util.Optional;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;

@@ -44,7 +44,6 @@ public class ChangeVersionTask extends Task implements RevisionChangeTrait {
 	
 	/**
 	 * set the version to write to the pom / json
-	 * @param versionAsString
 	 */
 	@Configurable @Required
 	public void setVersion(String versionAsString) {

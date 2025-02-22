@@ -23,7 +23,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import com.braintribe.build.ant.tasks.validation.AbstractPomValidatingTask;
-import com.braintribe.build.ant.tasks.validation.PomContentValidatingTask;
 import com.braintribe.build.ant.tasks.validation.PomFormatValidatingTask;
 import com.braintribe.build.ant.types.AttachedResource;
 import com.braintribe.build.ant.utils.FileUtil;

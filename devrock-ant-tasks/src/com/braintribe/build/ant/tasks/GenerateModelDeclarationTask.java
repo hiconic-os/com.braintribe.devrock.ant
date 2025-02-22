@@ -17,14 +17,11 @@ import com.braintribe.console.ConsoleOutputs;
 import com.braintribe.devrock.mc.core.commons.McReasonOutput;
 import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.gm.model.reason.Reason;
-import com.braintribe.logging.Logger;
 import com.braintribe.model.artifact.compiled.CompiledArtifact;
 
 
 public class GenerateModelDeclarationTask extends Task {
 
-	private static Logger log = Logger.getLogger(GenerateModelDeclarationTask.class);
-	
 	private Pom pom;
 	private File buildDir;
 	private String classpath;
@@ -45,8 +42,6 @@ public class GenerateModelDeclarationTask extends Task {
 	
 	/**
 	 * Set the output directory base for this ant task. 
-	 * 
-	 * @param {@link File} buildDir
 	 */
 	public void setBuildDir(File buildDir) {
 		this.buildDir = buildDir;

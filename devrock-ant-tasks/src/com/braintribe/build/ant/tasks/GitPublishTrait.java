@@ -14,14 +14,6 @@ import com.braintribe.utils.StringTools;
 public interface GitPublishTrait {
 	static Logger log = Logger.getLogger(GitPublishTrait.class);
 
-	/**
-	 * @param mcBridge
-	 * @param workingDirectory
-	 * @param ai
-	 * @param originalRevision
-	 * @param newLocalRevision
-	 * @param sourceRepositoryKind
-	 */
 	default void gitPublish(McBridge mcBridge, File workingDirectory, String commitMessage) {
 	
 		List<String> cmd = new ArrayList<String>();

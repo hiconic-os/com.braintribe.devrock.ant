@@ -19,7 +19,7 @@ import com.braintribe.utils.StringTools;
  * Stores the build set, i.e. the list of the dependencies to be built, as a string in a configurable property.
  * 
  * <p>
- * In addition to the attributes inherited from {@link AbstractBuildSetTask}, the following attributes are supported:
+ * In addition to the attributes inherited from {@link ForBuildSet}, the following attributes are supported:
  * <ul>
  * <li><code>resulProperty</code>: the name of the result property. This is mandatory.
  * <li><code>artifactSeparator</code>: the delimiter between artifacts. Default: {@value #DEFAULT_ARTIFACT_SEPARATOR}

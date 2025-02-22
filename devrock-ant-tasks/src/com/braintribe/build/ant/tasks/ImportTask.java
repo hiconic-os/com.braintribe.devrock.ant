@@ -46,7 +46,6 @@ import com.braintribe.utils.lcd.LazyInitialization;
  *	set ANT_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y
  */
 public class ImportTask extends org.apache.tools.ant.taskdefs.ImportTask {
-	private static final String PROFILE_USECASE = "PROFILE_USECASE";
 	private String artifact;
 	private final PartIdentification importTuple = PartIdentification.create("import", "xml");
 	private String useCase = "DEVROCK";
