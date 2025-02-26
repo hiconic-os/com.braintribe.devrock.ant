@@ -20,7 +20,7 @@ limitations under the License.
         <version>[1.0,1.1)</version>
     </parent>
     <artifactId>devrock-ant-tasks</artifactId>
-    <version>1.0.482</version>
+    <version>1.0.483</version>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
