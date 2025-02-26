@@ -7,9 +7,10 @@
 
 package com.braintribe.build.ant.tasks;
 
-import static com.braintribe.utils.lcd.CollectionTools2.newMap;
+import static com.braintribe.utils.lcd.CollectionTools2.newTreeMap;
 
 import java.io.File;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +29,7 @@ import com.braintribe.codec.marshaller.api.GmSerializationOptions;
 import com.braintribe.codec.marshaller.api.TypeExplicitness;
 import com.braintribe.codec.marshaller.api.TypeExplicitnessOption;
 import com.braintribe.codec.marshaller.yaml.YamlMarshaller;
+import com.braintribe.devrock.mc.core.declared.commons.HashComparators;
 import com.braintribe.devrock.mc.core.repository.index.ArtifactIndex;
 import com.braintribe.devrock.model.repository.Repository;
 import com.braintribe.devrock.model.repository.RepositoryConfiguration;
@@ -38,6 +40,7 @@ import com.braintribe.gm.config.yaml.YamlConfigurations;
 import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.model.artifact.compiled.CompiledArtifactIdentification;
 import com.braintribe.model.artifact.essential.ArtifactIdentification;
+import com.braintribe.model.artifact.essential.VersionedArtifactIdentification;
 import com.braintribe.model.version.Version;
 import com.braintribe.utils.FileTools;
 
@@ -142,8 +145,8 @@ public class BuildReleaseViewTask extends Task {
 		}
 
 		private Map<String, Version> resolveArtifactsToRelease(ArtifactIndex artifactIndex) {
-			Map<String, Version> artifacts = newMap();
-
+			Map<String, Version> artifacts = newTreeMap();
+			
 			for (String artifactAsString : artifactIndex.getArtifacts()) {
 				CompiledArtifactIdentification cai = CompiledArtifactIdentification.parse(artifactAsString);
 				Version version = cai.getVersion();
@@ -161,9 +164,18 @@ public class BuildReleaseViewTask extends Task {
 			LockArtifactFilter result = LockArtifactFilter.T.create();
 
 			Set<String> locks = result.getLocks();
+			
+			Comparator<CompiledArtifactIdentification> comparator = Comparator.comparing(CompiledArtifactIdentification::getGroupId) //
+					.thenComparing(CompiledArtifactIdentification::getArtifactId) //
+					.thenComparing(CompiledArtifactIdentification::getVersion);
+			
+			var sortedArtifacts = artifacts.entrySet().stream() //
+					.map(e -> CompiledArtifactIdentification.from(ArtifactIdentification.parse(e.getKey()), e.getValue())) //
+					.sorted(comparator) //
+					.toList();
 
-			for (Entry<String, Version> e : artifacts.entrySet())
-				locks.add(e.getKey() + "#" + e.getValue());
+			for (var artifact: sortedArtifacts)
+				locks.add(artifact.asString());
 
 			return result;
 		}
