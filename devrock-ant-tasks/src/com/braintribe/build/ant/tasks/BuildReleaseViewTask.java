@@ -24,6 +24,7 @@ import org.apache.tools.ant.Task;
 import com.braintribe.build.ant.mc.Bridges;
 import com.braintribe.build.ant.mc.McBridge;
 import com.braintribe.build.ant.utils.DrAntTools;
+import com.braintribe.cfg.Configurable;
 import com.braintribe.cfg.Required;
 import com.braintribe.codec.marshaller.api.GmSerializationOptions;
 import com.braintribe.codec.marshaller.api.TypeExplicitness;
@@ -57,7 +58,7 @@ public class BuildReleaseViewTask extends Task {
 	private File configuration;
 	private File outputFile;
 
-	@Required
+	@Configurable
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
 	}
@@ -205,7 +206,9 @@ public class BuildReleaseViewTask extends Task {
 			repo.setArtifactFilter(filter);
 
 			RepositoryView repoView = RepositoryView.T.create();
-			repoView.setDisplayName(displayName);
+			if (displayName != null)
+				repoView.setDisplayName(displayName);
+			
 			repoView.getRepositories().add(repo);
 
 			return repoView;
