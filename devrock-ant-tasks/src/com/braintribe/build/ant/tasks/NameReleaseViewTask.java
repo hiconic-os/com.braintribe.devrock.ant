@@ -30,7 +30,6 @@ import com.braintribe.utils.FileTools;
 public class NameReleaseViewTask extends Task {
 
 	private String displayName;
-	private File configuration;
 	private File file;
 	private File output;
 
@@ -55,7 +54,13 @@ public class NameReleaseViewTask extends Task {
 	}
 
 	private void _execute() throws BuildException {
-		var repositoryView = YamlConfigurations.read(RepositoryView.T).from(configuration).get();
+		if (file == null)
+			throw new BuildException("Argument [file] is mandatory");
+		
+		if (output == null)
+			throw new BuildException("Argumen [output] is mandatory");
+		
+		var repositoryView = YamlConfigurations.read(RepositoryView.T).from(file).get();
 		repositoryView.setDisplayName(displayName);
 		
 		FileTools.write(output).usingOutputStream( //
