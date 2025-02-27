@@ -9,6 +9,10 @@ package com.braintribe.build.ant.tasks;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,6 +25,7 @@ import com.braintribe.codec.marshaller.api.GmSerializationOptions;
 import com.braintribe.codec.marshaller.api.TypeExplicitness;
 import com.braintribe.codec.marshaller.api.TypeExplicitnessOption;
 import com.braintribe.codec.marshaller.yaml.YamlMarshaller;
+import com.braintribe.devrock.model.repositoryview.Release;
 import com.braintribe.devrock.model.repositoryview.RepositoryView;
 import com.braintribe.gm.config.yaml.YamlConfigurations;
 import com.braintribe.model.artifact.compiled.CompiledArtifactIdentification;
@@ -87,12 +92,20 @@ public class NameReleaseViewTask extends Task {
 			throw new BuildException("Argumen [releaseNotesOutput] is mandatory");
 		
 		var repositoryView = YamlConfigurations.read(RepositoryView.T).from(file).get();
+		var releaseDate = new Date();
 		
 		CompiledArtifactIdentification artifact = CompiledArtifactIdentification.from(pom.getArtifact());
 		
 		var displayName = artifact.asString();
+
+		Release release = Release.T.create();
+		release.setGroupId(artifact.getGroupId());
+		release.setArtifactId(artifact.getArtifactId());
+		release.setVersion(artifact.getVersion().asString());
+		release.setDate(releaseDate);
 		
 		repositoryView.setDisplayName(displayName);
+		repositoryView.setRelease(release);
 		
 		FileTools.write(output).usingOutputStream( //
 			os -> new YamlMarshaller().marshall(os, repositoryView, GmSerializationOptions.defaultOptions.derive() //
@@ -111,8 +124,23 @@ public class NameReleaseViewTask extends Task {
 		variables.put(VersionedArtifactIdentification.groupId, artifact.getGroupId());
 		variables.put(VersionedArtifactIdentification.artifactId, artifact.getArtifactId());
 		variables.put(VersionedArtifactIdentification.version, artifact.getVersion().asString());
+		variables.put("date", getNowAsString(releaseDate));
 		releaseNotes = ReasonedTemplating.merge(releaseNotes, variables).get();
 
 		FileTools.write(releaseNotesOutput).withCharset(StandardCharsets.UTF_8).string(releaseNotes);
+	}
+	
+	private static String getNowAsString(Date date) {
+        // Convert Date to ZonedDateTime using the system default timezone
+        ZonedDateTime zonedDateTime = date.toInstant().atZone(ZoneId.systemDefault());
+        
+        // Define the formatter with the desired pattern
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss Z");
+        
+        // Format the ZonedDateTime into a String
+        String formattedDate = zonedDateTime.format(formatter);
+        
+        // Output the formatted date
+        return formattedDate;
 	}
 }
