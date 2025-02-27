@@ -14,6 +14,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tools.ant.BuildException;
@@ -118,7 +119,7 @@ public class NameReleaseViewTask extends Task {
 		var releaseNotes = FileTools.read(releaseNotesFile).withCharset(StandardCharsets.UTF_8).asString();
 		
 		if (releaseNotes.isEmpty())
-			releaseNotes = "# Release ${groupId}:${artifactId}#${version}";
+			releaseNotes = "# ${artifactId} Release Notes ${version}";
 
 		Map<String, String> variables = new HashMap<>(pom.getArtifact().getProperties());
 		variables.put(VersionedArtifactIdentification.groupId, artifact.getGroupId());
@@ -135,7 +136,7 @@ public class NameReleaseViewTask extends Task {
         ZonedDateTime zonedDateTime = date.toInstant().atZone(ZoneId.systemDefault());
         
         // Define the formatter with the desired pattern
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss Z");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm:ss z", Locale.US);
         
         // Format the ZonedDateTime into a String
         String formattedDate = zonedDateTime.format(formatter);
