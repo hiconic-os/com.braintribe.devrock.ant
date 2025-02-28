@@ -7,6 +7,9 @@
 
 package com.braintribe.build.ant.tasks;
 
+import static com.braintribe.console.ConsoleOutputs.print;
+import static com.braintribe.console.ConsoleOutputs.yellow;
+
 import java.io.File;
 
 import org.apache.tools.ant.BuildException;
@@ -129,9 +132,10 @@ public class PublishingTask extends Task implements PublishTaskTrait, GitPublish
 
 	private void addRelevantFilesToDeploy(Artifact artifact) {
 		if (!artifactInLocalRepositoryDirectory.exists()) {
+			print(yellow("WARNING: Nothing was published as directory does not exist: " + artifactInLocalRepositoryDirectory.getAbsolutePath()));
 			return;
 		}
-		
+
 		addPartsFromDirectory(this, artifactInLocalRepositoryDirectory, artifact);
 	}
 
