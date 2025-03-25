@@ -433,7 +433,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<if>
 			<isset property="unittests.errorOccurred"/>
 			<then>
-				<echo message="At least one unit test failed."/>
+				<echo message="AT LEAST ONE UNIT TEST FAILED."/>
 				<if>
 					<istrue value="${unittests.failOnFailure}"/>
 					<then>
@@ -442,7 +442,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 				</if>
 			</then>
 			<else>
-				<echo message="All unit tests were successful."/>
+				<echo message="ALL UNIT TESTS WERE SUCCESSFUL."/>
 			</else>
 		</if>
 	</target>

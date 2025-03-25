@@ -338,7 +338,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 		<if>
 			<isset property="integrationtests.errorOccurred"/>
 			<then>
-				<echo message="At least one integration test failed."/>
+				<echo message="AT LEAST ONE INTEGRATION TEST FAILED."/>
 				<if>
 					<istrue value="${integrationtests.failOnFailure}"/>
 					<then>
@@ -347,7 +347,7 @@ com.braintribe.logging.juli.formatters.simple.SimpleFormatter.format=%1$tY-%1$tm
 				</if>
 			</then>
 			<else>
-				<echo message="All integration tests were successful."/>
+				<echo message="ALL INTEGRATION TESTS WERE SUCCESSFUL."/>
 			</else>
 		</if>
 	</target>
