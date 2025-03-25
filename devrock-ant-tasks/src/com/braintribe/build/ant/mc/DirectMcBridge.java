@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -326,9 +325,8 @@ public class DirectMcBridge implements McBridge {
 		}
 		
 		List<PartIdentification> genericPartIdentifications = new ArrayList<>();
-		if (parts != null) {
-			for (PartIdentification partIdentification: parts) {
-				switch (partIdentification.asString()) {
+		for (PartIdentification partIdentification : parts) {
+			switch (partIdentification.asString()) {
 				case ":jar":
 					contextBuilder.enrichJar(true);
 					break;
@@ -341,17 +339,16 @@ public class DirectMcBridge implements McBridge {
 				default:
 					genericPartIdentifications.add(partIdentification);
 					break;
-				}
-			}
-			
-			if (!genericPartIdentifications.isEmpty()) {
-				PartEnrichingContextBuilder enrichingContextBuilder = PartEnrichingContext.build();
-				genericPartIdentifications.forEach(enrichingContextBuilder::enrichPart);
-				contextBuilder.enrich(enrichingContextBuilder.done());
 			}
 		}
-		
-		LazyInitialized<AnalysisArtifactResolution> preparationFailedResolution = new LazyInitialized<>(AnalysisArtifactResolution.T::create);
+
+		if (!genericPartIdentifications.isEmpty()) {
+			PartEnrichingContextBuilder enrichingContextBuilder = PartEnrichingContext.build();
+			genericPartIdentifications.forEach(enrichingContextBuilder::enrichPart);
+			contextBuilder.enrich(enrichingContextBuilder.done());
+		}
+
+			LazyInitialized<AnalysisArtifactResolution> preparationFailedResolution = new LazyInitialized<>(AnalysisArtifactResolution.T::create);
 		// type filter expression -> filters every dependency 
 		if (typeFilter != null) {
 			Maybe<BasicTypeRuleFilter> typeRuleFilterPotential = BasicTypeRuleFilter.parse(typeFilter);
@@ -400,28 +397,6 @@ public class DirectMcBridge implements McBridge {
 		failOnFailedResolution(resolution);
 		
 		return resolution;	
-	}
-	
-	private List<Reason> getRootCauses(Reason failure) {
-		Set<Reason> visited = new HashSet<>();
-		List<Reason> causes = new ArrayList<>();
-		
-		scanForRootCauses(failure, causes, visited);
-		return causes;
-	}
-
-	private void scanForRootCauses(Reason reason, List<Reason> causes, Set<Reason> visited) {
-		if (!visited.add(reason))
-			return;
-		
-		if (reason.getReasons().isEmpty()) {
-			causes.add(reason);
-			return;
-		}
-		
-		for (Reason cause: reason.getReasons()) {
-			scanForRootCauses(cause, causes, visited);
-		}
 	}
 	
 	@Override
