@@ -197,7 +197,7 @@ public class DirectMcBridge implements McBridge {
 			
 			ArtifactResolutionUtil.printDependencyTree(trimmedResolution);
 			
-			writeResolutionAndConfigurationToProblemAnalysisFolder( resolution, getRepositoryConfiguration());
+			writeResolutionAndConfigurationToProblemAnalysisFolder( resolution, getRepositoryConfigurationDirect());
 
 			//throw new BuildException("See errors above");
 			throw produceContextualizedBuildException( "See errors above", null);
@@ -265,11 +265,15 @@ public class DirectMcBridge implements McBridge {
 
 	@Override
 	public RepositoryConfiguration getRepositoryConfiguration() {
-		RepositoryConfiguration result = getDataResolverContract().repositoryReflection().getRepositoryConfiguration();
+		RepositoryConfiguration result = getRepositoryConfigurationDirect();
 		if (result.hasFailed())
 			produceContextualizedBuildExceptionReasoned(result.getFailure());
 
 		return result;
+	}
+
+	private RepositoryConfiguration getRepositoryConfigurationDirect() {
+		return getDataResolverContract().repositoryReflection().getRepositoryConfiguration();
 	}
 
 	@Override
@@ -681,14 +685,14 @@ public class DirectMcBridge implements McBridge {
 	
 	@Override
 	public BuildException produceContextualizedBuildException(String message, Exception cause) {
-		RepositoryConfiguration repositoryConfiguration = getRepositoryConfiguration();
+		RepositoryConfiguration repositoryConfiguration = getRepositoryConfigurationDirect();
 		writeConfigurationToProblemAnalysisFolder(repositoryConfiguration);
 		return new BuildException(message, cause);		
 	}
 
 	@Override
 	public NoSuchElementException produceContextualizedNoSuchElementException(String message, Exception cause) {
-		RepositoryConfiguration repositoryConfiguration = getRepositoryConfiguration();
+		RepositoryConfiguration repositoryConfiguration = getRepositoryConfigurationDirect();
 		writeConfigurationToProblemAnalysisFolder(repositoryConfiguration);
 		//return new NoSuchElementException( message, cause);
 		return new NoSuchElementException( message);
@@ -699,7 +703,7 @@ public class DirectMcBridge implements McBridge {
 	 * @param resolution - the resolution to attach the failure of the current repository configuration
 	 */
 	private void checkAndPropagateRepositoryConfigurationFailure(AnalysisArtifactResolution resolution) {
-		RepositoryConfiguration repositoryConfiguration = getRepositoryConfiguration();
+		RepositoryConfiguration repositoryConfiguration = getRepositoryConfigurationDirect();
 		if (repositoryConfiguration.hasFailed()) {
 			Reason configurationFailureReason = repositoryConfiguration.getFailure();
 			Reason resolutionFailureReason = resolution.getFailure();
