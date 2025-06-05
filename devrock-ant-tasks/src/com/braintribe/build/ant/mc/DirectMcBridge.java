@@ -262,11 +262,14 @@ public class DirectMcBridge implements McBridge {
 	private ProblemAnalysisContract getProblemAnalysisContract() {
 		return classpathResolverContext.contract( ProblemAnalysisContract.class);
 	}
-	
-	
+
 	@Override
 	public RepositoryConfiguration getRepositoryConfiguration() {
-		return getDataResolverContract().repositoryReflection().getRepositoryConfiguration();
+		RepositoryConfiguration result = getDataResolverContract().repositoryReflection().getRepositoryConfiguration();
+		if (result.hasFailed())
+			produceContextualizedBuildExceptionReasoned(result.getFailure());
+
+		return result;
 	}
 
 	@Override
