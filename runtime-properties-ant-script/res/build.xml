@@ -14,11 +14,25 @@ You should have received a copy of the GNU Lesser General Public License along w
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" name="runtime-properties-ant-script">
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
 
-	<target name="install">
+	<target name="dist" depends="clean, init">
+		<echo message="dist" />
+		<if>
+			<available file="conf" type="dir"/>
+			<then>
+				<echo message="here" />
+				<zip destfile="${dist}/${versionedName}-conf.zip">
+					<fileset dir="conf"/>
+				</zip>
+			</then>
+		</if>
+	</target>
+
+	<target name="install" depends="dist">
 		<bt:install>
 			<pom file="pom.xml" id="project" />
 			<attach file="asset.man" type="asset:man" />
 			<attach file="runtime.properties" type="runtime:properties" />
+			<attach file="dist/${versionedName}-conf.zip" classifier="conf" skipIfNoFile="true" />
 		</bt:install>
 	</target>
 
