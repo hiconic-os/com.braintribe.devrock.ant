@@ -38,25 +38,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<pom refid="pom.project"/>
 			<attach file="asset.man" type="asset:man"/>
 			<attach file="${dist}/${versionedName}-sources.jar" classifier="sources"/>
+			<attach file="${dist}/${versionedName}-javadoc.jar" classifier="javadoc" skipIfNoFile="true"/>
+			<attach file="dist/${versionedName}-resources.zip" classifier="resources" skipIfNoFile="true"/>
 		</bt:install>
-		<if>
-			<available file="${dist}/${versionedName}-javadoc.jar" type="file"/>
-			<then>
-				<bt:install>
-					<pom refid="pom.project"/>
-					<attach file="${dist}/${versionedName}-javadoc.jar" classifier="javadoc"/>
-				</bt:install>
-			</then>
-		</if>
-		<!-- Copied from lib-ant-script and only added the following if-block (resources.zip). -->
-		<if>
-			<available file="dist/${versionedName}-resources.zip" type="file"/>
-			<then>
-				<bt:install>
-					<pom refid="pom.project"/>
-					<attach file="dist/${versionedName}-resources.zip" classifier="resources"/>
-				</bt:install>
-			</then>
-		</if>
 	</target>
 </project>
