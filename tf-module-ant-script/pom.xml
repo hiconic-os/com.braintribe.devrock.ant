@@ -20,7 +20,7 @@ limitations under the License.
         <version>[1.0,1.1)</version>
     </parent>
     <artifactId>tf-module-ant-script</artifactId>
-    <version>1.0.24</version>
+    <version>1.0.25</version>
     <packaging>pom</packaging>
     <properties>
         <codebase>braintribe-dev</codebase>
