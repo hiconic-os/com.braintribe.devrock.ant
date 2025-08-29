@@ -31,6 +31,8 @@ import com.braintribe.build.ant.types.Dependency;
 import com.braintribe.build.ant.utils.ParallelBuildTools;
 import com.braintribe.cfg.Configurable;
 import com.braintribe.devrock.model.mc.reason.PomValidationReason;
+import com.braintribe.exception.Exceptions;
+import com.braintribe.gm.model.reason.ReasonException;
 import com.braintribe.logging.Logger;
 import com.braintribe.model.artifact.compiled.CompiledArtifact;
 import com.braintribe.model.artifact.compiled.CompiledDependency;
@@ -272,11 +274,14 @@ public class Pom extends Task {
 		// actually read the pom  
 		try {
 			artifact = Bridges.getInstance(getProject()).readArtifact(file);
-			
-		} catch (Exception e) {
-			String msg = "cannot read pom file [" + file.getAbsolutePath() + "]";
+		}
+		catch (BuildException e) {
+			throw e;
+		}
+		catch (Exception e) {
+			String msg = "Exception while reading pom file [" + file.getAbsolutePath() + "]";
 			log.error( msg, e);
-			throw new BuildException(msg, e);
+			throw Exceptions.unchecked(e, msg);
 		}
 		
 		if (shouldEnsure(project)) {
