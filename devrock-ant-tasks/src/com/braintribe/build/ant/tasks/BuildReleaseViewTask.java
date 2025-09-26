@@ -10,13 +10,13 @@ package com.braintribe.build.ant.tasks;
 import static com.braintribe.utils.lcd.CollectionTools2.newTreeMap;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -30,7 +30,7 @@ import com.braintribe.codec.marshaller.api.GmSerializationOptions;
 import com.braintribe.codec.marshaller.api.TypeExplicitness;
 import com.braintribe.codec.marshaller.api.TypeExplicitnessOption;
 import com.braintribe.codec.marshaller.yaml.YamlMarshaller;
-import com.braintribe.devrock.mc.core.declared.commons.HashComparators;
+import com.braintribe.common.lcd.Pair;
 import com.braintribe.devrock.mc.core.repository.index.ArtifactIndex;
 import com.braintribe.devrock.model.repository.Repository;
 import com.braintribe.devrock.model.repository.RepositoryConfiguration;
@@ -41,8 +41,9 @@ import com.braintribe.gm.config.yaml.YamlConfigurations;
 import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.model.artifact.compiled.CompiledArtifactIdentification;
 import com.braintribe.model.artifact.essential.ArtifactIdentification;
-import com.braintribe.model.artifact.essential.VersionedArtifactIdentification;
 import com.braintribe.model.version.Version;
+import com.braintribe.model.version.VersionExpression;
+import com.braintribe.model.version.VersionRange;
 import com.braintribe.utils.FileTools;
 
 import devrock.releasing.model.configuration.ReleaseConfiguration;
@@ -53,14 +54,20 @@ import devrock.releasing.model.configuration.ReleaseConfiguration;
  * @author peter.gazdik
  */
 public class BuildReleaseViewTask extends Task {
-
+	private static final VersionRange fullRange = VersionRange.from(null, false, null, false);
 	private String displayName;
 	private File configuration;
 	private File outputFile;
+	private String uploadRepo;
 
 	@Configurable
 	public void setDisplayName(String displayName) {
 		this.displayName = displayName;
+	}
+	
+	@Configurable
+	public void setUploadRepo(String uploadRepo) {
+		this.uploadRepo = uploadRepo;
 	}
 
 	@Required
@@ -82,22 +89,51 @@ public class BuildReleaseViewTask extends Task {
 		new BuildReleaseViewExecution().run();
 	}
 
+	private static class ArtifactCondition {
+		public final Pattern identificationPattern;
+		public final VersionExpression versionPattern;
+		public ArtifactCondition(Pattern identificationPattern, VersionExpression versionPattern) {
+			super();
+			this.identificationPattern = identificationPattern;
+			this.versionPattern = versionPattern;
+		}
+	}
+	 
+	
 	private class BuildReleaseViewExecution {
+		
 
 		private final ReleaseConfiguration releaseConfiguration;
-		private final List<Pattern> includes;
-		private final List<Pattern> excludes;
+		private final List<ArtifactCondition> includes;
+		private final List<ArtifactCondition> excludes;
 
 		public BuildReleaseViewExecution() {
 			releaseConfiguration = YamlConfigurations.read(ReleaseConfiguration.T).from(configuration).get();
-			includes = toPatterns(releaseConfiguration.getIncludes());
-			excludes = toPatterns(releaseConfiguration.getExcludes());
+			includes = parsePatterns(releaseConfiguration.getIncludes(), true);
+			excludes = parsePatterns(releaseConfiguration.getExcludes(), false);
 		}
 
-		private List<Pattern> toPatterns(List<String> simpleExpressions) {
-			return simpleExpressions.stream() //
-					.map(this::toPattern) //
-					.collect(Collectors.toList());
+		private List<ArtifactCondition> parsePatterns(List<String> simpleExpressions, boolean ensureNotEmpty) {
+			List<ArtifactCondition> patterns = new ArrayList<>();
+			for (String expr: simpleExpressions) {
+				int index = expr.indexOf('#');
+				
+				if (index == -1) {
+					Pattern pattern = toPattern(expr);
+					patterns.add(new ArtifactCondition(pattern, fullRange));
+				}
+				else {
+					Pattern pattern = toPattern(expr.substring(0, index));
+					VersionExpression versionExpression = VersionExpression.parse(expr.substring(index + 1));
+					patterns.add(new ArtifactCondition(pattern, versionExpression));
+				}
+			}
+			
+			if (ensureNotEmpty && patterns.isEmpty()) {
+				patterns.add(new ArtifactCondition(Pattern.compile(".*"), fullRange));
+			}
+			
+			return patterns;
 		}
 
 		private Pattern toPattern(String simpleExpression) {
@@ -112,7 +148,7 @@ public class BuildReleaseViewTask extends Task {
 		public void run() {
 			ArtifactIndex artifactIndex = readArtifactIndex();
 
-			Map<String, Version> artifacts = resolveArtifactsToRelease(artifactIndex);
+			Collection<Pair<String, Version>> artifacts = resolveArtifactsToRelease(artifactIndex);
 
 			ArtifactFilter filter = buildArtifactFilter(artifacts);
 
@@ -126,7 +162,7 @@ public class BuildReleaseViewTask extends Task {
 
 			RepositoryConfiguration repositoryConfiguration = bridge.getRepositoryConfiguration();
 
-			Repository uploadRepository = repositoryConfiguration.getUploadRepository();
+			Repository uploadRepository = extracted(repositoryConfiguration);
 			if (uploadRepository == null)
 				throw new BuildException("Cannot build release view. No upload repository configured to read the artifact index from."
 						+ optionalOrigination(repositoryConfiguration));
@@ -138,6 +174,16 @@ public class BuildReleaseViewTask extends Task {
 			return maybeArtifactIndex.get();
 		}
 
+		private Repository extracted(RepositoryConfiguration repositoryConfiguration) {
+			if (uploadRepo == null)
+				return repositoryConfiguration.getUploadRepository();
+			
+			return repositoryConfiguration.getRepositories().stream() //
+					.filter(r -> uploadRepo.equals(r.getName())) //
+					.findFirst() //
+					.orElse(null);
+		}
+
 		private String optionalOrigination(RepositoryConfiguration repositoryConfiguration) {
 			if (repositoryConfiguration == null)
 				return "";
@@ -145,23 +191,47 @@ public class BuildReleaseViewTask extends Task {
 				return " Repo config origination: " + repositoryConfiguration.getOrigination();
 		}
 
-		private Map<String, Version> resolveArtifactsToRelease(ArtifactIndex artifactIndex) {
-			Map<String, Version> artifacts = newTreeMap();
+		private Collection<Pair<String, Version>> resolveArtifactsToRelease(ArtifactIndex artifactIndex) {
+			
+			Map<Pair<ArtifactCondition, String>, Version> matches = newTreeMap();
 			
 			for (String artifactAsString : artifactIndex.getArtifacts()) {
 				CompiledArtifactIdentification cai = CompiledArtifactIdentification.parse(artifactAsString);
+				
 				Version version = cai.getVersion();
-
 				String versionlessName = ArtifactIdentification.from(cai).asString();
-				artifacts.compute(versionlessName, (k, v) -> version.isHigherThan(v) ? version : v);
+				
+				if (matches(excludes, versionlessName, version) != null)
+					continue;
+				
+				ArtifactCondition includeCondition = matches(includes, versionlessName, version);
+				if (includeCondition == null) 
+					continue;
+					
+				Pair<ArtifactCondition, String> key = Pair.of(includeCondition, versionlessName);
+				
+				matches.compute(key, (k, v) -> version.isHigherThan(v) ? version : v);
 			}
-
-			artifacts.keySet().removeIf(this::isNotIncluded);
+			
+			List<Pair<String, Version>> artifacts = new ArrayList<>();
+			
+			for (Map.Entry<Pair<ArtifactCondition, String>, Version> match: matches.entrySet()) {
+				artifacts.add(Pair.of(match.getKey().second(), match.getValue()));
+			}
 
 			return artifacts;
 		}
+		
+		private ArtifactCondition matches(List<ArtifactCondition> conditions, String versionlessName, Version version) {
+			for (ArtifactCondition condition: conditions) {
+				if (condition.identificationPattern.matcher(versionlessName).matches() && condition.versionPattern.matches(version))
+					return condition;
+			}
+			
+			return null;
+		}
 
-		private ArtifactFilter buildArtifactFilter(Map<String, Version> artifacts) {
+		private ArtifactFilter buildArtifactFilter(Collection<Pair<String, Version>> artifacts) {
 			LockArtifactFilter result = LockArtifactFilter.T.create();
 
 			Set<String> locks = result.getLocks();
@@ -170,8 +240,8 @@ public class BuildReleaseViewTask extends Task {
 					.thenComparing(CompiledArtifactIdentification::getArtifactId) //
 					.thenComparing(CompiledArtifactIdentification::getVersion);
 			
-			var sortedArtifacts = artifacts.entrySet().stream() //
-					.map(e -> CompiledArtifactIdentification.from(ArtifactIdentification.parse(e.getKey()), e.getValue())) //
+			var sortedArtifacts = artifacts.stream() //
+					.map(e -> CompiledArtifactIdentification.from(ArtifactIdentification.parse(e.first()), e.second())) //
 					.sorted(comparator) //
 					.toList();
 
@@ -179,23 +249,6 @@ public class BuildReleaseViewTask extends Task {
 				locks.add(artifact.asString());
 
 			return result;
-		}
-
-		private boolean isNotIncluded(String versionlessName) {
-			return !isIncluded(versionlessName);
-		}
-
-		private boolean isIncluded(String versionlessName) {
-			return matchesAny(versionlessName, includes) && //
-					!matchesAny(versionlessName, excludes);
-		}
-
-		private boolean matchesAny(String versionlessName, List<Pattern> patterns) {
-			for (Pattern p : patterns)
-				if (p.matcher(versionlessName).matches())
-					return true;
-
-			return false;
 		}
 
 		private RepositoryView createRepositoryView(ArtifactFilter filter) {
