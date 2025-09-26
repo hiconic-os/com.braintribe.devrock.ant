@@ -8,6 +8,8 @@
 
 package com.braintribe.build.ant.tasks;
 
+import org.apache.tools.ant.BuildException;
+
 import com.braintribe.build.ant.mc.Bridges;
 import com.braintribe.build.ant.mc.McBridge;
 import com.braintribe.devrock.model.repository.Repository;
@@ -44,6 +46,11 @@ public class InstallTask extends BasicInstallOrDeployTask {
 		if (repository != null)
 			return repository;
 		
-		return bridge.getRepository("local");
+		repository = bridge.getRepository("local");
+		
+		if (repository != null)
+			return repository;
+		
+		throw new BuildException("No install repository configured in RepositoryConfiguration.");
 	}
 }
