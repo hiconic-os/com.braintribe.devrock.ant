@@ -7,12 +7,11 @@
 
 package com.braintribe.build.ant.tasks;
 
-import static com.braintribe.utils.lcd.CollectionTools2.newTreeMap;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -193,7 +192,7 @@ public class BuildReleaseViewTask extends Task {
 
 		private Collection<Pair<String, Version>> resolveArtifactsToRelease(ArtifactIndex artifactIndex) {
 			
-			Map<Pair<ArtifactCondition, String>, Version> matches = newTreeMap();
+			Map<Pair<ArtifactCondition, String>, Version> matches = new HashMap<>();
 			
 			for (String artifactAsString : artifactIndex.getArtifacts()) {
 				CompiledArtifactIdentification cai = CompiledArtifactIdentification.parse(artifactAsString);
