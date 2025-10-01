@@ -31,10 +31,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</bt:nameReleaseView>
 	</target>
 
-	<target name="update-release-versions" depends="dist">
+	<target name="update-release-versions" depends="clean, init">
+		<fail message="You must provide property 'repo' to load the artifact index from."
+          unless="repo"/>
 		<bt:buildReleaseView
 			configuration="release-configuration.yaml"
-			outputFile="repositoryview.yaml" />
+			outputFile="repositoryview.yaml"
+			uploadRepo="${repo}" />
 	</target>
 
 	<target name="install" depends="dist">
