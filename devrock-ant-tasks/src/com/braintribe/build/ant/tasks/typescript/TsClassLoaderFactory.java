@@ -49,9 +49,10 @@ import jsinterop.annotations.JsType;
 	// When loading the annotations of the annotated Request class, this lead to an instance being created, which initializes its T field.
 	// I.e. this was called:
 	//                  EnumType<HttpRequestMethod> T = EnumTypes.T(HttpRequestMethod.class)
-	// Now, if this would be loaded from the ReverseOrderClassLoader, it would lead to a new TypeReflection being created underneath, 
-	// which for some reason would fail, because the found implementation would be taken from a different class-loader than the desired interface (GmPlatform).
-	// This is unclear to me, but I think it's best not to instantiate a nested TypeReflection, but instead go with the reflection classes of the outer ClassLoader space.
+	// Now, if EnumTypes was be loaded by the ReverseOrderClassLoader, it would lead to a new TypeReflection being created underneath ,
+	// and also a new GmPlatform initialization. That would fail as the found implementation would for some reason be loaded by the outer ClassLoader,
+	// but the desired interface (GmPlatform) by the ReverseOrderClassLoader, this there would be a mismatch (no idea why).
+	// Either way, I think it's better not to instantiate a nested GmPlatform + TypeReflection, but go with the reflection classes of the outer ClassLoader space.
 	// In such case, loading the T type detects the Enum (HttpRequestMethod) was loaded by a different ClassLoader and a null is assigned to the T field. 
 	// @formatter:on
 
