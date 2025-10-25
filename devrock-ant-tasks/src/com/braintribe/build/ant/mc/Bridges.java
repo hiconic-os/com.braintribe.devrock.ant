@@ -6,11 +6,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tools.ant.Project;
 
-import com.braintribe.utils.lcd.LazyInitialized;
+import com.braintribe.utils.lcd.Lazy;
 
 public abstract class Bridges {
 	private static Map<BridgeKey, DirectMcBridge> bridges = new ConcurrentHashMap<>();
-	private static Map<File, LazyInitialized<File>> devEnvFolderCache = new ConcurrentHashMap<>();
+	private static Map<File, Lazy<File>> devEnvFolderCache = new ConcurrentHashMap<>();
 
 	public static McBridge getAntInstance(Project project, String profileUseCase) {
 		File devEnvFolder = detectDevEnvFolder(project);
@@ -39,7 +39,7 @@ public abstract class Bridges {
 	}
 
 	private static File detectDevEnvFolder(File dir) {
-		return devEnvFolderCache.computeIfAbsent(dir, d -> new LazyInitialized<File>(() -> _detectDevEnvFolder(d))).get();
+		return devEnvFolderCache.computeIfAbsent(dir, d -> new Lazy<File>(() -> _detectDevEnvFolder(d))).get();
 	}
 	
 	private static File _detectDevEnvFolder(File dir) {

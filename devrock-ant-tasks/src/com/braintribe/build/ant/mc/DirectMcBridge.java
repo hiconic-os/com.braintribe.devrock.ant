@@ -88,7 +88,7 @@ import com.braintribe.model.artifact.consumable.PartEnrichment;
 import com.braintribe.model.artifact.consumable.PartReflection;
 import com.braintribe.model.artifact.essential.ArtifactIdentification;
 import com.braintribe.model.artifact.essential.PartIdentification;
-import com.braintribe.utils.lcd.LazyInitialized;
+import com.braintribe.utils.lcd.Lazy;
 import com.braintribe.ve.impl.OverridingEnvironment;
 import com.braintribe.ve.impl.StandardEnvironment;
 import com.braintribe.wire.api.Wire;
@@ -355,7 +355,7 @@ public class DirectMcBridge implements McBridge {
 			contextBuilder.enrich(enrichingContextBuilder.done());
 		}
 
-			LazyInitialized<AnalysisArtifactResolution> preparationFailedResolution = new LazyInitialized<>(AnalysisArtifactResolution.T::create);
+			Lazy<AnalysisArtifactResolution> preparationFailedResolution = new Lazy<>(AnalysisArtifactResolution.T::create);
 		// type filter expression -> filters every dependency 
 		if (typeFilter != null) {
 			Maybe<BasicTypeRuleFilter> typeRuleFilterPotential = BasicTypeRuleFilter.parse(typeFilter);
