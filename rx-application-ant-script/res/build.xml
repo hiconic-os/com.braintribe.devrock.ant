@@ -208,4 +208,28 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</bt:install>
 	</target>
 
+	<target name="build-docker" depends="init">
+		<if>
+			<available file="Dockerfile" type="file"/>
+			<then>
+				<echo message="Building Docker image - ${maven.project.artifactId}:latest"/>
+				<exec executable="docker" failonerror="true">
+					<arg value="build"/>
+					<arg value="--no-cache"/>
+					<arg value="--build-arg"/>
+					<arg value="GROUP_ID=${maven.project.groupId}"/>
+					<arg value="--build-arg"/>
+					<arg value="ARTIFACT_ID=${maven.project.artifactId}"/>
+					<arg value="--build-arg"/>
+					<arg value="VERSION=${maven.project.version}"/>
+					<arg value="--build-arg"/>
+					<arg value="APP_JAVA_VERSION=${pom.project.properties.java.version}"/>
+					<arg value="-t"/>
+					<arg value="${maven.project.artifactId}:latest"/>
+					<arg value="."/>
+				</exec>
+			</then>
+		</if>
+	</target>
+
 </project>
