@@ -7,12 +7,15 @@
 
 package com.braintribe.build.ant.tasks.typescript;
 
+import static com.braintribe.utils.lcd.CollectionTools2.asSet;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.braintribe.build.ant.tasks.typescript.impl.TfSetupTools;
@@ -21,6 +24,7 @@ import com.braintribe.model.artifact.analysis.AnalysisArtifact;
 import com.braintribe.model.generic.GMF;
 import com.braintribe.model.generic.annotation.Initializer;
 import com.braintribe.model.generic.reflection.EntityTypes;
+import com.braintribe.model.generic.reflection.EnumTypes;
 import com.braintribe.utils.classloader.ReverseOrderURLClassLoader;
 
 import jsinterop.annotations.JsType;
@@ -31,7 +35,7 @@ import jsinterop.annotations.JsType;
 /* package */ class TsClassLoaderFactory {
 
 	private static final String jsInteropAnnotationPackage = JsType.class.getPackage().getName();
-	private static final String gmReflectionPackage = EntityTypes.class.getPackage().getName();
+	private static final Set<String> gmReflectionClassNames = asSet(EntityTypes.class.getName(), EnumTypes.class.getName());
 
 	public static URLClassLoader prepareClassLoader(File buildFolder, List<AnalysisArtifact> solutions) {
 		Stream<URL> buildUrl = nullableFileToUrlStream(buildFolder);
@@ -44,7 +48,7 @@ import jsinterop.annotations.JsType;
 
 	// @formatter:off
 	// What are we doing here?
-	// Why do we want to load the GM / Reflection classes from our classLoader, and not let them be loaded again from the ReverseOrderClassLoader?
+	// Why do we want to load the EntityTypes/EnumTypes from our (outer) classLoader, and not let them be loaded again from the ReverseOrderClassLoader?
 	// There was a problem with MDAs (MetaData annotation which contained a GM Enum), e.g. @RequestMethod(HttpRequestMethod.GET)
 	// When loading the annotations of the annotated Request class, this lead to an instance being created, which initializes its T field.
 	// I.e. this was called:
@@ -58,7 +62,7 @@ import jsinterop.annotations.JsType;
 
 	private static boolean loadFromParentFirst(String className) {
 		return className.startsWith(jsInteropAnnotationPackage) || //
-				className.startsWith(gmReflectionPackage) || //
+				gmReflectionClassNames.contains(className) || //
 				className.equals(Initializer.class.getName()) || //
 				className.equals(GMF.class.getName());
 	}
