@@ -23,7 +23,9 @@ import com.braintribe.devrock.mc.api.commons.PartIdentifications;
 import com.braintribe.model.artifact.analysis.AnalysisArtifact;
 import com.braintribe.model.generic.GMF;
 import com.braintribe.model.generic.annotation.Initializer;
+import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
+import com.braintribe.model.generic.reflection.EnumType;
 import com.braintribe.model.generic.reflection.EnumTypes;
 import com.braintribe.utils.classloader.ReverseOrderURLClassLoader;
 
@@ -35,7 +37,9 @@ import jsinterop.annotations.JsType;
 /* package */ class TsClassLoaderFactory {
 
 	private static final String jsInteropAnnotationPackage = JsType.class.getPackage().getName();
-	private static final Set<String> gmReflectionClassNames = asSet(EntityTypes.class.getName(), EnumTypes.class.getName());
+	private static final Set<String> gmReflectionClassNames = asSet( //
+			EntityTypes.class.getName(), EntityType.class.getName(), //
+			EnumTypes.class.getName(), EnumType.class.getName());
 
 	public static URLClassLoader prepareClassLoader(File buildFolder, List<AnalysisArtifact> solutions) {
 		Stream<URL> buildUrl = nullableFileToUrlStream(buildFolder);
