@@ -40,6 +40,7 @@ import com.braintribe.gm.config.yaml.YamlConfigurations;
 import com.braintribe.gm.model.reason.Maybe;
 import com.braintribe.model.artifact.compiled.CompiledArtifactIdentification;
 import com.braintribe.model.artifact.essential.ArtifactIdentification;
+import com.braintribe.model.version.FuzzyVersion;
 import com.braintribe.model.version.Version;
 import com.braintribe.model.version.VersionExpression;
 import com.braintribe.model.version.VersionRange;
@@ -190,9 +191,11 @@ public class BuildReleaseViewTask extends Task {
 				return " Repo config origination: " + repositoryConfiguration.getOrigination();
 		}
 
+		record ArtifactVersioningKey(ArtifactCondition condition, String artifactIdentification, String fuzzyVersion) {}
+		
 		private Collection<Pair<String, Version>> resolveArtifactsToRelease(ArtifactIndex artifactIndex) {
 			
-			Map<Pair<ArtifactCondition, String>, Version> matches = new HashMap<>();
+			Map<ArtifactVersioningKey, Version> matches = new HashMap<>();
 			
 			for (String artifactAsString : artifactIndex.getArtifacts()) {
 				CompiledArtifactIdentification cai = CompiledArtifactIdentification.parse(artifactAsString);
@@ -207,15 +210,16 @@ public class BuildReleaseViewTask extends Task {
 				if (includeCondition == null) 
 					continue;
 					
-				Pair<ArtifactCondition, String> key = Pair.of(includeCondition, versionlessName);
+				FuzzyVersion fuzzyVersion = FuzzyVersion.from(version);
+				ArtifactVersioningKey key = new ArtifactVersioningKey(includeCondition, versionlessName, fuzzyVersion.asShortNotation());
 				
 				matches.compute(key, (k, v) -> version.isHigherThan(v) ? version : v);
 			}
 			
 			List<Pair<String, Version>> artifacts = new ArrayList<>();
 			
-			for (Map.Entry<Pair<ArtifactCondition, String>, Version> match: matches.entrySet()) {
-				artifacts.add(Pair.of(match.getKey().second(), match.getValue()));
+			for (Map.Entry<ArtifactVersioningKey, Version> match: matches.entrySet()) {
+				artifacts.add(Pair.of(match.getKey().artifactIdentification(), match.getValue()));
 			}
 
 			return artifacts;
