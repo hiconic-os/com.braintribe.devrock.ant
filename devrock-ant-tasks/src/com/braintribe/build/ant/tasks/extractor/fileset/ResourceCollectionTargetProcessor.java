@@ -165,7 +165,10 @@ public class ResourceCollectionTargetProcessor {
 		StaticResourceCollection classpathFileSet = newStaticResourceCollection();
 		fileSetToIdMap.put( classpathFileSet, classpathFilesetId);
 		idToFilesetMap.put( classpathFilesetId, classpathFileSet); 
-		List<PartIdentification> classpathPartTuples = Collections.singletonList(FilesetConstants.classpathPartIdentification);
+
+		// Deactivated automatic injection of weird .classpath part: List<PartIdentification> classpathPartTuples = Collections.singletonList(FilesetConstants.classpathPartIdentification);
+		
+		List<PartIdentification> classpathPartTuples = Collections.emptyList();
 		
 		// if any additional types are set for the classpath file set, parse and add them to its relevant part tuples
 		if (classpathTypeProperty != null) {

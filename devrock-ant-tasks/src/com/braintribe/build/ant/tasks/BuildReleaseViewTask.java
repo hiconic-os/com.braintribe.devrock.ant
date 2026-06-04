@@ -162,7 +162,7 @@ public class BuildReleaseViewTask extends Task {
 
 			RepositoryConfiguration repositoryConfiguration = bridge.getRepositoryConfiguration();
 
-			Repository uploadRepository = extracted(repositoryConfiguration);
+			Repository uploadRepository = getIndexRepository(repositoryConfiguration);
 			if (uploadRepository == null)
 				throw new BuildException("Cannot build release view. No upload repository configured to read the artifact index from."
 						+ optionalOrigination(repositoryConfiguration));
@@ -174,7 +174,7 @@ public class BuildReleaseViewTask extends Task {
 			return maybeArtifactIndex.get();
 		}
 
-		private Repository extracted(RepositoryConfiguration repositoryConfiguration) {
+		private Repository getIndexRepository(RepositoryConfiguration repositoryConfiguration) {
 			if (uploadRepo == null)
 				return repositoryConfiguration.getUploadRepository();
 			
@@ -266,7 +266,7 @@ public class BuildReleaseViewTask extends Task {
 				repoView.setDisplayName(displayName);
 			
 			repoView.getRepositories().add(repo);
-
+			
 			return repoView;
 		}
 
