@@ -20,6 +20,7 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 
+import com.braintribe.build.ant.tasks.DependenciesTask;
 import com.braintribe.build.ant.types.FileSetTarget;
 import com.braintribe.devrock.mc.api.commons.PartIdentifications;
 import com.braintribe.logging.Logger;
@@ -33,7 +34,7 @@ import com.braintribe.model.resource.Resource;
 /**
  * a processor that handles n FileSetTargets <br/>
  * can be used to:<br/>
- * store all {@link FileSetTarget} specified to the {@link MalaclypseLocalDependencyWalkTask}<br/>
+ * store all {@link FileSetTarget} specified to the {@link DependenciesTask}<br/>
  * automatically parse the types specified as {@link String} and convert them into {@link List} of {@link PartTuple}<br/>
  * automatically attach matching {@link Part} to the appropriate {@link FileSet} <br/>
  * export all {@link FileSet} to the {@link Project} under the id as specified in the {@link FileSetTarget}
@@ -111,7 +112,7 @@ public class ResourceCollectionTargetProcessor {
 		// sources - optional
 		if (sourcesFilesetId != null) {
 			
-			StaticResourceCollection sourcesFileSet = newStaticResourceCollection();;
+			StaticResourceCollection sourcesFileSet = newStaticResourceCollection();
 			fileSetToIdMap.put( sourcesFileSet, sourcesFilesetId);
 			idToFilesetMap.put( sourcesFilesetId, sourcesFileSet); 
 			List<PartIdentification> sourcesPartTuples = Collections.singletonList(PartIdentifications.sources_jar);
@@ -166,10 +167,8 @@ public class ResourceCollectionTargetProcessor {
 		fileSetToIdMap.put( classpathFileSet, classpathFilesetId);
 		idToFilesetMap.put( classpathFilesetId, classpathFileSet); 
 
-		// Deactivated automatic injection of weird .classpath part: List<PartIdentification> classpathPartTuples = Collections.singletonList(FilesetConstants.classpathPartIdentification);
-		
-		List<PartIdentification> classpathPartTuples = Collections.emptyList();
-		
+		List<PartIdentification> classpathPartTuples = Collections.singletonList(FilesetConstants.classpathPartIdentification);
+
 		// if any additional types are set for the classpath file set, parse and add them to its relevant part tuples
 		if (classpathTypeProperty != null) {
 			List<PartIdentification> specifiedPartTuples = RelevantPartTupleProcessor.parseRelevantPartTuplesFromString(classpathTypeProperty);
@@ -183,7 +182,6 @@ public class ResourceCollectionTargetProcessor {
 	 * checks if a {@link Part} matches one (or more) of the {@link PartIdentification}s of a {@link FileSetTarget}, and if so
 	 * adds it to the {@link FileSet}. If classes is true, it also looks for *-classes.jar
 	 * @param part - the {@link Part} of the {@link Solution} to check
-	 * @param classes - true if the jar is not simple :jar, but actually classes:jar
 	 */
 	public void matchPart( Part part) {
 		for (Entry<List<PartIdentification>, List<StaticResourceCollection>> entry : partTuplesToFileSetMap.entrySet()) {
@@ -246,10 +244,15 @@ public class ResourceCollectionTargetProcessor {
 	 * @return - a list of all unique part tuples as found in all file set targets.
 	 */
 	public List<PartIdentification> getRelevantPartTuples() {
-		List<PartIdentification> mergedPartTuples = new ArrayList<PartIdentification>();
+		List<PartIdentification> mergedPartTuples = new ArrayList<>();
 	
 		for (Entry<List<PartIdentification>, List<StaticResourceCollection>> entry : partTuplesToFileSetMap.entrySet()) {
-			List<PartIdentification> partTuples = entry.getKey();
+			List<PartIdentification> partTuples = new ArrayList<>(entry.getKey());
+
+			// Yes, this is horrible code, but it's the least invasive way to keep the old mechanism and prevent ".classpath" file download attempts
+			if (partTuples.remove(FilesetConstants.classpathPartIdentification))
+				partTuples.add(PartIdentifications.jar);
+
 			mergedPartTuples = RelevantPartTupleProcessor.mergeRelevantPartTuplesForEnricher(mergedPartTuples, partTuples);
 		}
 		return mergedPartTuples;
