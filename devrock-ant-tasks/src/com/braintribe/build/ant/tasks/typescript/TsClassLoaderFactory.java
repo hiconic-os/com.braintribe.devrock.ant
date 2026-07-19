@@ -8,8 +8,10 @@
 package com.braintribe.build.ant.tasks.typescript;
 
 import static com.braintribe.utils.lcd.CollectionTools2.asSet;
+import static java.util.Collections.emptySet;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -27,6 +29,8 @@ import com.braintribe.model.generic.reflection.EntityType;
 import com.braintribe.model.generic.reflection.EntityTypes;
 import com.braintribe.model.generic.reflection.EnumType;
 import com.braintribe.model.generic.reflection.EnumTypes;
+import com.braintribe.model.generic.reflection.GM_INITIALIZATION;
+import com.braintribe.model.generic.reflection.GenericModelTypeReflection;
 import com.braintribe.utils.classloader.ReverseOrderURLClassLoader;
 
 import jsinterop.annotations.JsType;
@@ -39,7 +43,12 @@ import jsinterop.annotations.JsType;
 	private static final String jsInteropAnnotationPackage = JsType.class.getPackage().getName();
 	private static final Set<String> gmReflectionClassNames = asSet( //
 			EntityTypes.class.getName(), EntityType.class.getName(), //
-			EnumTypes.class.getName(), EnumType.class.getName());
+			EnumTypes.class.getName(), EnumType.class.getName(), //
+			GenericModelTypeReflection.class.getName(), //
+			GMF.class.getName() //
+	);
+
+	private static Set<String> parentFirstReflectionClassNames = emptySet();
 
 	public static URLClassLoader prepareClassLoader(File buildFolder, List<AnalysisArtifact> solutions) {
 		Stream<URL> buildUrl = nullableFileToUrlStream(buildFolder);
@@ -47,7 +56,13 @@ import jsinterop.annotations.JsType;
 
 		URL[] urls = Stream.concat(buildUrl, solutionUrls).toArray(URL[]::new);
 
-		return new ReverseOrderURLClassLoader(urls, JsType.class.getClassLoader(), TsClassLoaderFactory::loadFromParentFirst);
+		ReverseOrderURLClassLoader classLoader = new ReverseOrderURLClassLoader(urls, JsType.class.getClassLoader(),
+				TsClassLoaderFactory::loadFromParentFirst);
+
+		if (!disableGmTypesInitialization(classLoader))
+			parentFirstReflectionClassNames = gmReflectionClassNames;
+
+		return classLoader;
 	}
 
 	// @formatter:off
@@ -66,9 +81,9 @@ import jsinterop.annotations.JsType;
 
 	private static boolean loadFromParentFirst(String className) {
 		return className.startsWith(jsInteropAnnotationPackage) || //
-				gmReflectionClassNames.contains(className) || //
 				className.equals(Initializer.class.getName()) || //
-				className.equals(GMF.class.getName());
+				parentFirstReflectionClassNames.contains(className) //
+		;
 	}
 
 	private static Stream<URL> extractJarUrlsForSolutions(List<AnalysisArtifact> solutions) {
@@ -93,6 +108,47 @@ import jsinterop.annotations.JsType;
 
 		} catch (MalformedURLException e) {
 			throw new RuntimeException("Cannot convert URI to URL: " + uri, e);
+		}
+	}
+
+	/**
+	 * Sets {@link GM_INITIALIZATION#T_LITERAL_INIT_ENABLED} to false;
+	 */
+	private static boolean disableGmTypesInitialization(ReverseOrderURLClassLoader classLoader) {
+		String className = GM_INITIALIZATION.class.getName();
+		String fieldName = "T_LITERAL_INIT_ENABLED";
+
+		System.out.println("Deactivationg T Literal initialization for scanned classes.");
+		Class<?> clazz = loadClassOrNull(classLoader, className);
+		if (clazz == null) {
+			System.out.println(className + " not found at all (UNEXPECTED). Will continue with legacy behavior.");
+			return false;
+		}
+
+		if (clazz.getClassLoader() != classLoader) {
+			System.out.println(clazz.getSimpleName() + " not found in this artifact's deps. Will continue with legacy behavior.");
+			return false;
+		}
+
+		try {
+			Field declaredField = clazz.getDeclaredField(fieldName);
+			declaredField.set(null, Boolean.FALSE);
+
+			System.out.println("T literal initialization successfully disabled.");
+			return true;
+
+		} catch (Exception e) {
+			System.out.println("Exception while trying to disabled T literal initialization of GM types. Will continue with legacy behavior");
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	private static Class<?> loadClassOrNull(ReverseOrderURLClassLoader classLoader, String className) {
+		try {
+			return Class.forName(className, true, classLoader);
+		} catch (ClassNotFoundException e) {
+			return null;
 		}
 	}
 
