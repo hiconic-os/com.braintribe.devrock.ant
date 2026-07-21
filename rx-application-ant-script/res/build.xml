@@ -76,6 +76,16 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<mapper type="flatten"/>
 		</copy>
 
+		<path id="application.contributions.classpath">
+			<path refid="runtime.classpath"/>
+			<!-- Also allow the terminal artifact itself to contribute build-time configuration. -->
+			<pathelement location="${build}"/>
+		</path>
+
+		<!-- Build-time configuration contributions may materialize non-classpath web applications. -->
+		<bt:assembleWebApps classpathRefId="application.contributions.classpath" applicationDir="${dist}/application"/>
+		<bt:assembleJvmOptions classpathRefId="application.contributions.classpath" applicationDir="${dist}/application"/>
+
 		<fileset id="final-cp" dir="${dist}/application/lib"/>
 		<pathconvert property="manifest-cp" refid="final-cp" pathsep=" ">
 			<chainedmapper>

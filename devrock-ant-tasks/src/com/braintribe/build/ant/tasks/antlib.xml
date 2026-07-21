@@ -58,6 +58,8 @@
 	<taskdef name="tfjs" classname="com.braintribe.build.ant.tasks.typescript.GenerateJsInteropTypeScriptTask"/>
 	<taskdef name="npm" classname="com.braintribe.build.ant.tasks.typescript.GenerateNpmPackageTask"/>
 	<taskdef name="indexRes" classname="com.braintribe.build.ant.tasks.IndexResourcesTask"/>
+	<taskdef name="assembleWebApps" classname="com.braintribe.build.ant.tasks.AssembleWebAppsTask"/>
+	<taskdef name="assembleJvmOptions" classname="com.braintribe.build.ant.tasks.AssembleJvmOptionsTask"/>
 	<taskdef name="determineProcessingDataInsightFolder" classname="com.braintribe.build.ant.tasks.DetermineProcessingDataInsightFolder" />
 	<taskdef name="buildReleaseView" classname="com.braintribe.build.ant.tasks.BuildReleaseViewTask" />
 	<taskdef name="nameReleaseView" classname="com.braintribe.build.ant.tasks.NameReleaseViewTask" />
