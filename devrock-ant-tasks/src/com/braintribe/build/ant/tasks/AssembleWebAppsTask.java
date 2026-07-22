@@ -50,7 +50,8 @@ import com.braintribe.model.resource.FileResource;
 public class AssembleWebAppsTask extends Task {
 
 	private static final String CONTRIBUTION_PATH = "HICONIC-CONF/webapp-dependencies.properties";
-	private static final String GENERATED_CONFIG = "static-web-server-configuration.packaged-webapps.yaml";
+	// The final numeric segment is required by ModeledYamlConfiguration's (disambiguator-)?priority grammar.
+	private static final String GENERATED_CONFIG = "static-web-server-configuration.packaged-webapps-10.yaml";
 
 	private String classpathRefId;
 	private File applicationDir;
