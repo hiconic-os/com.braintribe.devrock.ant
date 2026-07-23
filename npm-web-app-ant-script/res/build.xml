@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright BRAINTRIBE TECHNOLOGY GMBH, Austria, 2002-2026
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant"
+		xmlns:bt="antlib:com.braintribe.build.ant.tasks"
+		name="npm-web-app-ant-script"
+		basedir="."
+		default="install">
+
+	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK"/>
+
+	<!-- A web artifact may override this with -Dweb.app.build.dir=... . -->
+	<property name="web.app.build.dir" location="build/web"/>
+
+	<condition property="npm.command" value="npm.cmd">
+		<os family="windows"/>
+	</condition>
+	<property name="npm.command" value="npm"/>
+
+	<target name="prepare" depends="init">
+		<fail message="npm-web-app-ant-script requires package.json">
+			<condition>
+				<not>
+					<available file="package.json" type="file"/>
+				</not>
+			</condition>
+		</fail>
+		<fail message="npm-web-app-ant-script requires package-lock.json so that npm ci is reproducible">
+			<condition>
+				<not>
+					<available file="package-lock.json" type="file"/>
+				</not>
+			</condition>
+		</fail>
+
+		<exec executable="${npm.command}" failonerror="true">
+			<arg value="ci"/>
+			<arg value="--no-audit"/>
+			<arg value="--no-fund"/>
+		</exec>
+	</target>
+
+	<target name="compile" depends="prepare">
+		<!-- Type checking is optional because some toolchains perform it as part of build. -->
+		<exec executable="${npm.command}" failonerror="true">
+			<arg value="run"/>
+			<arg value="--if-present"/>
+			<arg value="typecheck"/>
+		</exec>
+		<exec executable="${npm.command}" failonerror="true">
+			<arg value="run"/>
+			<arg value="build"/>
+		</exec>
+
+		<fail message="npm build did not produce the expected web application directory: ${web.app.build.dir}">
+			<condition>
+				<not>
+					<available file="${web.app.build.dir}" type="dir"/>
+				</not>
+			</condition>
+		</fail>
+	</target>
+
+	<target name="test" depends="prepare">
+		<!-- A UI without a test script is allowed initially; configured tests must pass. -->
+		<exec executable="${npm.command}" failonerror="true">
+			<arg value="run"/>
+			<arg value="--if-present"/>
+			<arg value="test"/>
+		</exec>
+	</target>
+
+	<target name="dist" depends="clean,compile">
+		<mkdir dir="${dist}"/>
+		<zip destfile="${dist}/${versionedName}-web-app.zip" basedir="${web.app.build.dir}"/>
+	</target>
+
+	<target name="install" depends="dist">
+		<bt:install>
+			<pom refid="pom.project"/>
+			<attach file="${dist}/${versionedName}-web-app.zip" type="web-app:zip"/>
+		</bt:install>
+	</target>
+
+</project>
