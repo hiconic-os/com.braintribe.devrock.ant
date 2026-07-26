@@ -13,9 +13,41 @@ You should have received a copy of the GNU Lesser General Public License along w
 	<property location="src" name="src"/>
 	<property location="build" name="build"/>
 	<property location="dist" name="dist"/>
-
 	<target name="init" depends="common-init">
+		<property environment="env"/>
+		<property name="packaging.profile" value="development"/>
 		<bt:pom file="pom.xml" id="maven.project"/>
+		<condition property="perform.local.docker.install">
+			<and>
+				<istrue value="${pom.project.properties.localDockerInstall}"/>
+				<isset property="install.local.docker"/>
+				<istrue value="${install.local.docker}"/>
+				<not><isset property="skip.local.docker.install"/></not>
+				<not><isset property="env.CI"/></not>
+				<not><isset property="env.GITHUB_ACTIONS"/></not>
+			</and>
+		</condition>
+		<condition property="docker.image.name" value="${pom.project.properties.dockerImage}"
+				else="${maven.project.artifactId}">
+			<isset property="pom.project.properties.dockerImage"/>
+		</condition>
+		<condition property="docker.image.tag" value="${pom.project.properties.dockerTag}" else="latest">
+			<isset property="pom.project.properties.dockerTag"/>
+		</condition>
+		<property name="docker.image.names" value="${docker.image.name}:${docker.image.tag}"/>
+		<condition property="docker.base.image" value="${pom.project.properties.dockerBaseImage}"
+				else="ghcr.io/hiconic-os/runtime-base:latest">
+			<isset property="pom.project.properties.dockerBaseImage"/>
+		</condition>
+		<condition property="docker.exposed.ports" value="${pom.project.properties.dockerExposedPorts}" else="">
+			<isset property="pom.project.properties.dockerExposedPorts"/>
+		</condition>
+		<condition property="docker.image.environment" value="${pom.project.properties.dockerEnvironment}" else="">
+			<isset property="pom.project.properties.dockerEnvironment"/>
+		</condition>
+		<property name="docker.image.push" value="false"/>
+		<property name="docker.image.pull" value="false"/>
+		<property name="docker.image.noCache" value="false"/>
 		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile">
 			<pom refid="maven.project"/>
 		</bt:dependencies>
@@ -85,6 +117,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<!-- Build-time configuration contributions may materialize non-classpath web applications. -->
 		<bt:assembleWebApps classpathRefId="application.contributions.classpath" applicationDir="${dist}/application"/>
 		<bt:assembleJvmOptions classpathRefId="application.contributions.classpath" applicationDir="${dist}/application"/>
+		<condition property="prune.resource.only.artifacts" value="true" else="false">
+			<equals arg1="${packaging.profile}" arg2="image"/>
+		</condition>
+		<bt:assembleClasspathResources classpathRefId="application.contributions.classpath"
+			applicationDir="${dist}/application"
+			terminalArtifactId="${maven.project.artifactId}"
+			pruneResourceOnlyArtifacts="${prune.resource.only.artifacts}"/>
 
 		<fileset id="final-cp" dir="${dist}/application/lib"/>
 		<pathconvert property="manifest-cp" refid="final-cp" pathsep=" ">
@@ -210,36 +249,41 @@ You should have received a copy of the GNU Lesser General Public License along w
 		</zip>
 	</target>
 
+	<target name="image-profile">
+		<property name="packaging.profile" value="image"/>
+	</target>
+
+	<target name="assemble-image" depends="image-profile,assemble"/>
+
 	<target name="install" depends="assemble">
 		<bt:install file="${dist}/application/lib/${versionedName}.jar">
 			<pom refid="maven.project"/>
 			<attach file="dist/${versionedName}.zip" type="application:zip"/>
 			<attach file="${dist}/${versionedName}-sources.jar" classifier="sources" />
 		</bt:install>
-	</target>
-
-	<target name="build-docker" depends="init">
 		<if>
-			<available file="Dockerfile" type="file"/>
+			<isset property="perform.local.docker.install"/>
 			<then>
-				<echo message="Building Docker image - ${maven.project.artifactId}:latest"/>
-				<exec executable="docker" failonerror="true">
-					<arg value="build"/>
-					<arg value="--no-cache"/>
-					<arg value="--build-arg"/>
-					<arg value="GROUP_ID=${maven.project.groupId}"/>
-					<arg value="--build-arg"/>
-					<arg value="ARTIFACT_ID=${maven.project.artifactId}"/>
-					<arg value="--build-arg"/>
-					<arg value="VERSION=${maven.project.version}"/>
-					<arg value="--build-arg"/>
-					<arg value="APP_JAVA_VERSION=${pom.project.properties.java.version}"/>
-					<arg value="-t"/>
-					<arg value="${maven.project.artifactId}:latest"/>
-					<arg value="."/>
-				</exec>
+				<antcall target="build-image"/>
 			</then>
 		</if>
 	</target>
+
+	<!-- Builds an image from an already assembled application. This split lets pipelines add
+	     deployment overlays and derive image tags from the resolved application before packaging. -->
+	<target name="build-image" depends="init">
+		<echo message="Building Docker image(s) ${docker.image.names}"/>
+		<bt:buildApplicationImage applicationDir="${dist}/application"
+			baseImage="${docker.base.image}"
+			imageNames="${docker.image.names}"
+			exposedPorts="${docker.exposed.ports}"
+			environment="${docker.image.environment}"
+			push="${docker.image.push}"
+			pull="${docker.image.pull}"
+			noCache="${docker.image.noCache}"/>
+	</target>
+
+	<!-- Compatibility name retained; unlike the legacy form this always assembles the image profile first. -->
+	<target name="build-docker" depends="assemble-image,build-image"/>
 
 </project>
