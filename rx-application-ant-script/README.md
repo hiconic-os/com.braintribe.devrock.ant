@@ -20,6 +20,16 @@ Script-based launches set `reflex.classpath.resources.dir` and therefore read in
 exclusively from this mirror. IDE launches without that system property continue to use the real
 classpath.
 
+Classpath-resource mirroring is enabled by default. Bootstrap-oriented CLI applications which do
+not consume indexed runtime configuration may explicitly disable it in their POM:
+
+```xml
+<mirrorClasspathResources>false</mirrorClasspathResources>
+```
+
+This opt-out also keeps such terminals buildable by an older SDK while a newly published
+`assembleClasspathResources` task is being integrated into the next SDK generation.
+
 ## Pure indexed resource artifacts
 
 The producer build marks an artifact containing only indexed resources with:

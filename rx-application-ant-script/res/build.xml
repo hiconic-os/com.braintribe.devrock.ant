@@ -45,6 +45,10 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<condition property="docker.image.environment" value="${pom.project.properties.dockerEnvironment}" else="">
 			<isset property="pom.project.properties.dockerEnvironment"/>
 		</condition>
+		<condition property="mirror.classpath.resources"
+				value="${pom.project.properties.mirrorClasspathResources}" else="true">
+			<isset property="pom.project.properties.mirrorClasspathResources"/>
+		</condition>
 		<property name="docker.image.push" value="false"/>
 		<property name="docker.image.pull" value="false"/>
 		<property name="docker.image.noCache" value="false"/>
@@ -120,10 +124,15 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<condition property="prune.resource.only.artifacts" value="true" else="false">
 			<equals arg1="${packaging.profile}" arg2="image"/>
 		</condition>
-		<bt:assembleClasspathResources classpathRefId="application.contributions.classpath"
-			applicationDir="${dist}/application"
-			terminalArtifactId="${maven.project.artifactId}"
-			pruneResourceOnlyArtifacts="${prune.resource.only.artifacts}"/>
+		<if>
+			<istrue value="${mirror.classpath.resources}"/>
+			<then>
+				<bt:assembleClasspathResources classpathRefId="application.contributions.classpath"
+					applicationDir="${dist}/application"
+					terminalArtifactId="${maven.project.artifactId}"
+					pruneResourceOnlyArtifacts="${prune.resource.only.artifacts}"/>
+			</then>
+		</if>
 
 		<fileset id="final-cp" dir="${dist}/application/lib"/>
 		<pathconvert property="manifest-cp" refid="final-cp" pathsep=" ">
