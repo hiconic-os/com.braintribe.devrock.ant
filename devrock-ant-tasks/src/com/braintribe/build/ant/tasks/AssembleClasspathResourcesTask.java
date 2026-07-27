@@ -36,6 +36,8 @@ public class AssembleClasspathResourcesTask extends Task {
 	public static final String RESOURCE_ONLY_MARKER_PATH = "META-INF/classpath-resource-only";
 	public static final String ORIGIN_PATH = "META-INF/classpath-origin.properties";
 	public static final String MIRROR_FOLDER = "classpath-resources";
+	public static final String PACKAGED_CONF_FOLDER = "packaged-conf";
+	public static final String CLASSPATH_CONF_PREFIX = "HICONIC-CONF/";
 
 	private String classpathRefId;
 	private File applicationDir;
@@ -70,7 +72,9 @@ public class AssembleClasspathResourcesTask extends Task {
 			throw new BuildException("Reference '" + classpathRefId + "' is not an Ant Path.");
 
 		Path mirrorRoot = applicationDir.toPath().resolve(MIRROR_FOLDER);
+		Path packagedConfRoot = applicationDir.toPath().resolve(PACKAGED_CONF_FOLDER);
 		recreateDirectory(mirrorRoot);
+		recreateDirectory(packagedConfRoot);
 
 		List<String> classpath = new ArrayList<>(Arrays.asList(((org.apache.tools.ant.types.Path) reference).list()));
 		classpath.sort(String::compareTo);
@@ -87,7 +91,44 @@ public class AssembleClasspathResourcesTask extends Task {
 		}
 
 		writeInventory(mirrorRoot, mirrors);
+		List<ArtifactMirror> packagedConfMirrors = projectPackagedConf(mirrorRoot, packagedConfRoot, mirrors);
+		writeInventory(packagedConfRoot, packagedConfMirrors);
 		log("Materialized " + mirrors.size() + " classpath resource artifact(s) in " + mirrorRoot, Project.MSG_INFO);
+		log("Projected configuration from " + packagedConfMirrors.size() + " artifact(s) into " + packagedConfRoot, Project.MSG_INFO);
+	}
+
+	private List<ArtifactMirror> projectPackagedConf(Path mirrorRoot, Path packagedConfRoot, List<ArtifactMirror> mirrors) {
+		List<ArtifactMirror> result = new ArrayList<>();
+		for (ArtifactMirror mirror : mirrors) {
+			List<String> entries = mirror.entries.stream()
+					.filter(entry -> entry.startsWith(CLASSPATH_CONF_PREFIX))
+					.map(entry -> entry.substring(CLASSPATH_CONF_PREFIX.length()))
+					.filter(entry -> !entry.isEmpty())
+					.toList();
+			if (entries.isEmpty())
+				continue;
+
+			Path sourceArtifactRoot = mirrorRoot.resolve(mirror.folder);
+			Path targetArtifactRoot = packagedConfRoot.resolve(mirror.folder);
+			for (String entry : entries)
+				copy(safeTarget(sourceArtifactRoot, CLASSPATH_CONF_PREFIX + entry), safeTarget(targetArtifactRoot, entry));
+
+			writeGeneratedIndex(targetArtifactRoot, entries);
+			writeOrigin(targetArtifactRoot, mirror.artifactId, mirror.sourceName);
+			result.add(new ArtifactMirror(mirror.artifactId, mirror.sourceName, mirror.folder, mirror.resourceOnly, mirror.pruned, entries));
+		}
+		return result;
+	}
+
+	private void writeGeneratedIndex(Path artifactRoot, List<String> entries) {
+		String content = "# Generated packaged configuration projection\n" + String.join("\n", entries) + "\n";
+		Path target = artifactRoot.resolve(INDEX_PATH);
+		try {
+			Files.createDirectories(target.getParent());
+			Files.writeString(target, content, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			throw new BuildException("Cannot write packaged configuration index " + target, e);
+		}
 	}
 
 	private ArtifactMirror mirrorDirectory(File directory, Path mirrorRoot, Set<String> artifactFolders) {

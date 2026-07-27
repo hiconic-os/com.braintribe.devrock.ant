@@ -10,15 +10,28 @@ application/classpath-resources/
     META-INF/classpath-origin.properties
     HICONIC-CONF/...
   index.json
+
+application/packaged-conf/
+  <artifact-file-name-without-jar>/
+    META-INF/classpath-index.txt
+    META-INF/classpath-origin.properties
+    ...
+  index.json
 ```
 
 The resources are copied byte-for-byte. Placeholders are intentionally not resolved and modeled
 configuration is not merged during assembly. This mirror is the lossless source/provenance view.
 An effective, merged configuration is a separate reflection concern.
 
+`packaged-conf` is an additional, human-oriented projection of indexed `HICONIC-CONF` contributions.
+It retains artifact provenance while removing the redundant technical `HICONIC-CONF` path segment.
+The complete canonical copy remains in `classpath-resources` for backward compatibility. A mapped
+filesystem classpath source restores the `HICONIC-CONF/` prefix logically, so configuration
+consumers remain independent of both physical layouts.
+
 Script-based launches set `reflex.classpath.resources.dir` and therefore read indexed resources
-exclusively from this mirror. IDE launches without that system property continue to use the real
-classpath.
+from this mirror and, when present, the adjacent `packaged-conf` projection. IDE launches without
+that system property continue to use the real classpath.
 
 Classpath-resource mirroring is enabled by default. Bootstrap-oriented CLI applications which do
 not consume indexed runtime configuration may explicitly disable it in their POM:
@@ -60,8 +73,9 @@ records whether each indexed artifact is `MIRRORED_AND_CLASSPATH` or `MIRRORED_O
 SHA-256 digest for every materialized resource.
 
 When the RX platform-reflection diagnostic package is available, its configuration archive also
-contains this complete raw mirror under `classpath-resources/`. This exposes both runtime
-configuration and classpath-origin configuration without inspecting application JARs.
+contains this complete raw mirror under `classpath-resources/` and the focused view under
+`packaged-conf/`. This exposes both runtime configuration and classpath-origin configuration
+without inspecting application JARs.
 
 ## Application images
 
