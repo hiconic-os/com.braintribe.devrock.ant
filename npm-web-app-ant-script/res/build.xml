@@ -83,6 +83,17 @@ limitations under the License.
 		</exec>
 	</target>
 
+	<!--
+		A bundled web application has no Java bytecode whose dependency linkage
+		can be checked. In particular, compiling every unchanged web application
+		during a repository-wide linking pass would bypass its normal build graph
+		and can leave local generated NPM dependencies unavailable.
+
+		Changed web applications are still compiled and type-checked by the
+		regular build before the linking phase.
+	-->
+	<target name="check-linking"/>
+
 	<target name="dist" depends="clean,compile">
 		<mkdir dir="${dist}"/>
 		<zip destfile="${dist}/${versionedName}-web-app.zip" basedir="${web.app.build.dir}"/>
