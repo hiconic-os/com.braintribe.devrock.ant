@@ -14,8 +14,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -28,6 +30,8 @@ import org.apache.tools.ant.Task;
 
 /**
  * Materializes resources referenced by {@code META-INF/classpath-index.txt} in an artifact-scoped filesystem mirror.
+ * Resources below {@code HICONIC-APP-RESOURCES/} are additionally projected into the application root, allowing
+ * versioned resource artifacts to contribute an application layout without snapshotting their dependency graph.
  * Marked, resource-only artifacts can optionally be removed from the assembled application's library folder.
  */
 public class AssembleClasspathResourcesTask extends Task {
@@ -38,6 +42,7 @@ public class AssembleClasspathResourcesTask extends Task {
 	public static final String MIRROR_FOLDER = "classpath-resources";
 	public static final String PACKAGED_CONF_FOLDER = "packaged-conf";
 	public static final String CLASSPATH_CONF_PREFIX = "HICONIC-CONF/";
+	public static final String APPLICATION_RESOURCES_PREFIX = "HICONIC-APP-RESOURCES/";
 
 	private String classpathRefId;
 	private File applicationDir;
@@ -93,8 +98,46 @@ public class AssembleClasspathResourcesTask extends Task {
 		writeInventory(mirrorRoot, mirrors);
 		List<ArtifactMirror> packagedConfMirrors = projectPackagedConf(mirrorRoot, packagedConfRoot, mirrors);
 		writeInventory(packagedConfRoot, packagedConfMirrors);
+		int projectedApplicationResources = projectApplicationResources(mirrorRoot, applicationDir.toPath(), mirrors);
 		log("Materialized " + mirrors.size() + " classpath resource artifact(s) in " + mirrorRoot, Project.MSG_INFO);
 		log("Projected configuration from " + packagedConfMirrors.size() + " artifact(s) into " + packagedConfRoot, Project.MSG_INFO);
+		log("Projected " + projectedApplicationResources + " application resource(s) into " + applicationDir, Project.MSG_INFO);
+	}
+
+	private int projectApplicationResources(Path mirrorRoot, Path applicationRoot, List<ArtifactMirror> mirrors) {
+		Map<Path, String> owners = new LinkedHashMap<>();
+		int count = 0;
+		for (ArtifactMirror mirror : mirrors) {
+			Path sourceArtifactRoot = mirrorRoot.resolve(mirror.folder);
+			for (String indexedEntry : mirror.entries) {
+				if (!indexedEntry.startsWith(APPLICATION_RESOURCES_PREFIX))
+					continue;
+
+				String applicationEntry = indexedEntry.substring(APPLICATION_RESOURCES_PREFIX.length());
+				if (applicationEntry.isEmpty())
+					continue;
+
+				Path relativeTarget = Path.of(applicationEntry).normalize();
+				if (relativeTarget.getNameCount() == 0 || isReservedApplicationPath(relativeTarget))
+					throw new BuildException("Classpath application resource targets reserved application path in "
+							+ mirror.artifactId + ": " + indexedEntry);
+
+				Path target = safeTarget(applicationRoot, applicationEntry);
+				String previousOwner = owners.putIfAbsent(target, mirror.artifactId);
+				if (previousOwner != null)
+					throw new BuildException("Classpath application resource collision at " + applicationEntry
+							+ " between " + previousOwner + " and " + mirror.artifactId);
+
+				copy(safeTarget(sourceArtifactRoot, indexedEntry), target);
+				count++;
+			}
+		}
+		return count;
+	}
+
+	private boolean isReservedApplicationPath(Path relativeTarget) {
+		String first = relativeTarget.getName(0).toString();
+		return "lib".equals(first) || MIRROR_FOLDER.equals(first) || PACKAGED_CONF_FOLDER.equals(first);
 	}
 
 	private List<ArtifactMirror> projectPackagedConf(Path mirrorRoot, Path packagedConfRoot, List<ArtifactMirror> mirrors) {

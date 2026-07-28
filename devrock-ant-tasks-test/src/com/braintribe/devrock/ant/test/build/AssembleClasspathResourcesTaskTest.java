@@ -28,11 +28,13 @@ public class AssembleClasspathResourcesTaskTest {
 		Path root = temporaryFolder.getRoot().toPath();
 		Path source = root.resolve("example-configuration-1.0.jar");
 		Map<String, String> entries = new LinkedHashMap<>();
-		entries.put(AssembleClasspathResourcesTask.INDEX_PATH,
-				"# raw index\nHICONIC-CONF/example.yaml\nHICONIC-RESOURCES/example.txt\n");
 		entries.put(AssembleClasspathResourcesTask.RESOURCE_ONLY_MARKER_PATH, "formatVersion=1\n");
 		entries.put("HICONIC-CONF/example.yaml", "value: ${still-unresolved}\n");
 		entries.put("HICONIC-RESOURCES/example.txt", "packaged resource\n");
+		entries.put(AssembleClasspathResourcesTask.APPLICATION_RESOURCES_PREFIX + "local/compose.yaml", "services: {}\n");
+		entries.put(AssembleClasspathResourcesTask.INDEX_PATH,
+				"# raw index\nHICONIC-CONF/example.yaml\nHICONIC-RESOURCES/example.txt\n"
+						+ AssembleClasspathResourcesTask.APPLICATION_RESOURCES_PREFIX + "local/compose.yaml\n");
 		writeZip(source, entries);
 
 		Path application = root.resolve("application");
@@ -55,7 +57,8 @@ public class AssembleClasspathResourcesTaskTest {
 		Path mirror = application.resolve("classpath-resources/example-configuration-1.0");
 		assertThat(mirror.resolve("HICONIC-CONF/example.yaml")).hasContent("value: ${still-unresolved}");
 		assertThat(mirror.resolve(AssembleClasspathResourcesTask.INDEX_PATH))
-				.hasContent("# raw index\nHICONIC-CONF/example.yaml\nHICONIC-RESOURCES/example.txt");
+				.hasContent("# raw index\nHICONIC-CONF/example.yaml\nHICONIC-RESOURCES/example.txt\n"
+						+ AssembleClasspathResourcesTask.APPLICATION_RESOURCES_PREFIX + "local/compose.yaml");
 		assertThat(application.resolve("lib").resolve(source.getFileName())).doesNotExist();
 		assertThat(application.resolve("classpath-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_ONLY\"")
@@ -69,6 +72,7 @@ public class AssembleClasspathResourcesTaskTest {
 		assertThat(application.resolve("packaged-conf/index.json")).content()
 				.contains("\"path\": \"example.yaml\"")
 				.doesNotContain("HICONIC-RESOURCES");
+		assertThat(application.resolve("local/compose.yaml")).hasContent("services: {}");
 	}
 
 	@Test
