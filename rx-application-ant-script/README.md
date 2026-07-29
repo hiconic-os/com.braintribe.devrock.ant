@@ -1,37 +1,61 @@
-# RX application classpath resources
+# RX application packaged resources
 
 RX application assembly materializes every resource referenced by an artifact's
-`META-INF/classpath-index.txt` into an artifact-scoped filesystem mirror:
+`META-INF/classpath-index.txt` into a lossless, artifact-scoped filesystem mirror:
 
 ```text
-application/classpath-resources/
+application/packaged-resources/
   <artifact-file-name-without-jar>/
-    META-INF/classpath-index.txt
-    META-INF/classpath-origin.properties
     HICONIC-CONF/...
-  index.json
-
-application/packaged-conf/
-  <artifact-file-name-without-jar>/
-    META-INF/classpath-index.txt
-    META-INF/classpath-origin.properties
+    HICONIC-RESOURCES/...
     ...
+  index.properties             # deterministic runtime index
   index.json
 ```
 
-The resources are copied byte-for-byte. Placeholders are intentionally not resolved and modeled
-configuration is not merged during assembly. This mirror is the lossless source/provenance view.
-An effective, merged configuration is a separate reflection concern.
+The resources are copied byte-for-byte at their canonical classpath-relative
+paths. Artifact provenance lives in the central indexes instead of adding
+technical `META-INF` files to every slot. `index.properties` is the compact
+runtime inventory; `index.json` additionally records digests and packaging
+diagnostics.
 
-`packaged-conf` is an additional, human-oriented projection of indexed `HICONIC-CONF` contributions.
-It retains artifact provenance while removing the redundant technical `HICONIC-CONF` path segment.
-The complete canonical copy remains in `classpath-resources` for backward compatibility. A mapped
-filesystem classpath source restores the `HICONIC-CONF/` prefix logically, so configuration
-consumers remain independent of both physical layouts.
+Applications carrying
+`hiconic.platform.reflex:configuration-assembly-processing` additionally opt
+into build-time configuration closure:
 
-Script-based launches set `reflex.classpath.resources.dir` and therefore read indexed resources
-from this mirror and, when present, the adjacent `packaged-conf` projection. IDE launches without
-that system property continue to use the real classpath.
+```text
+application/effective-conf/
+  compiled/
+    <configuration-key>.yaml
+    properties.yaml
+  <artifact-slot>/
+    <unconsumed-configuration-resource>
+
+application/configuration-compilation.yaml
+```
+
+The application classpath supplies the same model reflection and merger
+implementation used at runtime. Modeled configuration and properties are
+merged into `compiled/`; properties available at assembly time are resolved,
+while explicitly declared deployment imports remain symbolic. Configuration
+resources which no compiler owns remain byte-identical in their artifact slot.
+Consequently every raw `HICONIC-CONF` contribution is either represented by a
+compiled result or retained as a residual input. Undeclared unresolved
+properties, conflicts, invalid modeled configuration, and output collisions
+fail the application build. `configuration-compilation.yaml` records the
+assembly result outside the consumable configuration slots.
+
+Script-based launches set `reflex.packaged.resources.dir`. If `effective-conf`
+exists, the platform reads general resources directly from `packaged-resources`,
+suppresses only its raw `HICONIC-CONF/` entries, and exposes the direct
+`effective-conf` slots under the canonical logical `HICONIC-CONF/` prefix.
+There is therefore no duplicate configuration consumption, while icons,
+templates, and all other indexed resources continue to come from the complete
+mirror. `application/conf` remains the later deployment override layer.
+
+Older `classpath-resources` and `packaged-conf` layouts remain readable during
+the transition. IDE launches without a filesystem resource property continue
+to use the real classpath.
 
 Classpath-resource mirroring is enabled by default. Bootstrap-oriented CLI applications which do
 not consume indexed runtime configuration may explicitly disable it in their POM:
@@ -64,18 +88,18 @@ declarations, native libraries, or nested archives. The shared classpath-index b
 enter the source tree.
 
 `assemble` retains all runtime JARs for a mixed local/IDE environment. `assemble-image` additionally
-removes marked artifacts from `application/lib` after their resources have been mirrored. Pruning
-happens before the launch JAR manifest is generated, so its `Class-Path` only references retained
-JARs.
+removes marked artifacts from `application/lib` after all indexed resources have been materialized
+in `packaged-resources`. Pruning happens before the launch JAR manifest is generated, so its
+`Class-Path` only references retained JARs.
 
 `packaged-solutions.txt` remains a complete dependency provenance list. The mirror's `index.json`
 records whether each indexed artifact is `MIRRORED_AND_CLASSPATH` or `MIRRORED_ONLY` and includes a
 SHA-256 digest for every materialized resource.
 
-When the RX platform-reflection diagnostic package is available, its configuration archive also
-contains this complete raw mirror under `classpath-resources/` and the focused view under
-`packaged-conf/`. This exposes both runtime configuration and classpath-origin configuration
-without inspecting application JARs.
+When the RX platform-reflection diagnostic package is available, its configuration archive includes
+`packaged-resources/`, `effective-conf/`, and `configuration-compilation.yaml`. This exposes the
+lossless inputs, effective runtime view, and compilation result without inspecting application
+JARs.
 
 ## Application images
 

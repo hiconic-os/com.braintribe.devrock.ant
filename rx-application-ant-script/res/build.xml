@@ -237,6 +237,30 @@ You should have received a copy of the GNU Lesser General Public License along w
 			</then>
 		</if>
 
+		<!--
+			An application may opt into build-time configuration closure by carrying the narrow
+			configuration-assembly-processing runtime dependency. Run the launcher on the application's
+			own classpath: its model universe, indexed resource mirror and configuration imports are the
+			authoritative inputs. Applications without that dependency retain the previous assembly
+			behaviour.
+		-->
+		<available classname="hiconic.rx.platform.configuration.ConfigurationAssemblyMain"
+			classpathref="application.contributions.classpath"
+			property="configuration.assembly.available"/>
+		<if>
+			<isset property="configuration.assembly.available"/>
+			<then>
+				<echo message="Assembling and validating effective application configuration"/>
+				<java classname="hiconic.rx.platform.configuration.ConfigurationAssemblyMain"
+					classpathref="application.contributions.classpath"
+					fork="true"
+					failonerror="true">
+					<arg value="--application-dir"/>
+					<arg file="${dist}/application"/>
+				</java>
+			</then>
+		</if>
+
 	</target>
 
 	<target name="assemble" depends="dist">

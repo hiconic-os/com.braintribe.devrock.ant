@@ -54,24 +54,19 @@ public class AssembleClasspathResourcesTaskTest {
 		task.setPruneResourceOnlyArtifacts(true);
 		task.execute();
 
-		Path mirror = application.resolve("classpath-resources/example-configuration-1.0");
+		Path mirror = application.resolve("packaged-resources/example-configuration-1.0");
 		assertThat(mirror.resolve("HICONIC-CONF/example.yaml")).hasContent("value: ${still-unresolved}");
-		assertThat(mirror.resolve(AssembleClasspathResourcesTask.INDEX_PATH))
-				.hasContent("# raw index\nHICONIC-CONF/example.yaml\nHICONIC-RESOURCES/example.txt\n"
-						+ AssembleClasspathResourcesTask.APPLICATION_RESOURCES_PREFIX + "local/compose.yaml");
+		assertThat(mirror.resolve("HICONIC-RESOURCES/example.txt")).hasContent("packaged resource");
+		assertThat(mirror.resolve("META-INF")).doesNotExist();
 		assertThat(application.resolve("lib").resolve(source.getFileName())).doesNotExist();
-		assertThat(application.resolve("classpath-resources/index.json")).content()
+		assertThat(application.resolve("packaged-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_ONLY\"")
 				.contains("\"sha256\"");
-		Path packagedConf = application.resolve("packaged-conf/example-configuration-1.0");
-		assertThat(packagedConf.resolve("example.yaml")).hasContent("value: ${still-unresolved}");
-		assertThat(packagedConf.resolve("HICONIC-CONF")).doesNotExist();
-		assertThat(packagedConf.resolve("HICONIC-RESOURCES")).doesNotExist();
-		assertThat(packagedConf.resolve(AssembleClasspathResourcesTask.INDEX_PATH))
-				.hasContent("# Generated packaged configuration projection\nexample.yaml");
-		assertThat(application.resolve("packaged-conf/index.json")).content()
-				.contains("\"path\": \"example.yaml\"")
-				.doesNotContain("HICONIC-RESOURCES");
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("formatVersion=1")
+				.contains("artifact.0.origin=example-configuration")
+				.contains("artifact.0.resource.0.path=HICONIC-CONF/example.yaml");
+		assertThat(application.resolve("packaged-conf")).doesNotExist();
 		assertThat(application.resolve("local/compose.yaml")).hasContent("services: {}");
 	}
 
@@ -102,7 +97,7 @@ public class AssembleClasspathResourcesTaskTest {
 		task.execute();
 
 		assertThat(application.resolve("lib").resolve(source.getFileName())).exists();
-		assertThat(application.resolve("classpath-resources/index.json")).content()
+		assertThat(application.resolve("packaged-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"");
 	}
 
