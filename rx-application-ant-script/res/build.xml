@@ -252,9 +252,18 @@ You should have received a copy of the GNU Lesser General Public License along w
 			<then>
 				<echo message="Assembling and validating effective application configuration"/>
 				<java classname="hiconic.rx.platform.configuration.ConfigurationAssemblyMain"
-					classpathref="application.contributions.classpath"
 					fork="true"
 					failonerror="true">
+					<!--
+						The application dependency graph can exceed the Windows CreateProcess
+						command-line limit when Ant expands it into -classpath. The launch JAR
+						already manifests the identical, flattened application classpath, so
+						using it as the sole launcher entry keeps the command line short on all
+						platforms while executing against the assembled application.
+					-->
+					<classpath>
+						<pathelement location="${dist}/application/lib/${launch-jar}"/>
+					</classpath>
 					<arg value="--application-dir"/>
 					<arg file="${dist}/application"/>
 				</java>
