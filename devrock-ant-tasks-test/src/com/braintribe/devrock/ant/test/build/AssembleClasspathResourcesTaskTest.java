@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.junit.Rule;
 import org.junit.Test;
@@ -99,6 +100,56 @@ public class AssembleClasspathResourcesTaskTest {
 		assertThat(application.resolve("lib").resolve(source.getFileName())).exists();
 		assertThat(application.resolve("packaged-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"");
+	}
+
+	@Test
+	public void canonicalizesLegacyWindowsIndexEntries() throws Exception {
+		Path root = temporaryFolder.newFolder("windows-index").toPath();
+		Path source = root.resolve("windows-configuration-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.RESOURCE_ONLY_MARKER_PATH, "formatVersion=1\n",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF\\example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: windows\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.execute();
+
+		assertThat(application.resolve("packaged-resources/windows-configuration-1.0/HICONIC-CONF/example.yaml"))
+				.hasContent("value: windows");
+	}
+
+	@Test(expected = BuildException.class)
+	public void rejectsTraversalUsingLegacyWindowsSeparators() throws Exception {
+		Path root = temporaryFolder.newFolder("unsafe-windows-index").toPath();
+		Path source = root.resolve("unsafe-configuration-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "..\\outside.yaml\n",
+				"outside.yaml", "unsafe\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		taskFor(source, application).execute();
+	}
+
+	private AssembleClasspathResourcesTask taskFor(Path source, Path application) {
+		Project project = new Project();
+		project.init();
+		org.apache.tools.ant.types.Path classpath = new org.apache.tools.ant.types.Path(project);
+		classpath.setLocation(source.toFile());
+		project.addReference("test.classpath", classpath);
+
+		AssembleClasspathResourcesTask task = new AssembleClasspathResourcesTask();
+		task.setProject(project);
+		task.setClasspathRefId("test.classpath");
+		task.setApplicationDir(application.toFile());
+		task.setPruneResourceOnlyArtifacts(true);
+		return task;
 	}
 
 	private void writeZip(Path target, Map<String, String> entries) throws IOException {

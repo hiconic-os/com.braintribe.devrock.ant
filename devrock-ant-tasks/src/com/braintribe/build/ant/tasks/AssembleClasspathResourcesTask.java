@@ -221,11 +221,15 @@ public class AssembleClasspathResourcesTask extends Task {
 			int lineNumber = 0;
 			for (String line; (line = reader.readLine()) != null;) {
 				lineNumber++;
-				String entry = line.trim();
-				if (entry.isEmpty() || entry.startsWith("#"))
+				String rawEntry = line.trim();
+				if (rawEntry.isEmpty() || rawEntry.startsWith("#"))
 					continue;
-				if (entry.startsWith("/") || entry.contains("\\") || entry.contains("../") || entry.equals(".."))
-					throw new BuildException("Unsafe classpath index entry at " + source + ":" + lineNumber + ": " + entry);
+				// Classpath resource names always use '/', but older indices generated on
+				// Windows accidentally used the platform separator. Canonicalize those
+				// entries before validating them so existing artifacts remain readable.
+				String entry = rawEntry.replace('\\', '/');
+				if (entry.startsWith("/") || entry.contains("../") || entry.equals(".."))
+					throw new BuildException("Unsafe classpath index entry at " + source + ":" + lineNumber + ": " + rawEntry);
 				result.add(entry);
 			}
 		} catch (IOException e) {
