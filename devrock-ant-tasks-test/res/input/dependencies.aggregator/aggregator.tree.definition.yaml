@@ -1,0 +1,31 @@
+# repolet content for the aggregator-traversal test:
+#   consumer (pom.xml)  --type=pom-->  agg (pom-only aggregator)
+#   agg  -->  lib-a, lib-b
+#   lib-a  -->  lib-c   (to prove the whole subtree is traversed, not just direct children)
+!com.braintribe.devrock.model.repolet.content.RepoletContent {
+artifacts: [
+
+    # aggregator: no jar part (pom packaging) - only aggregates jars
+    { artifactId: "agg", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {},
+       dependencies: [
+          { artifactId: "lib-a",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},
+          { artifactId: "lib-b",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},
+       ],
+    },
+
+    { artifactId: "lib-a", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [
+          { artifactId: "lib-c",  groupId: "com.braintribe.devrock.test", version: "1.0.1"},
+       ],
+    },
+
+    { artifactId: "lib-b", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [ ],
+    },
+
+    { artifactId: "lib-c", groupId: "com.braintribe.devrock.test", version: "1.0.1", parts: {":jar": null},
+       dependencies: [ ],
+    },
+
+  ]
+}

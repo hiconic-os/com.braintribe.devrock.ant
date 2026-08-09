@@ -1,0 +1,26 @@
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" xmlns:bt="antlib:com.braintribe.build.ant.tasks" basedir="." default="dependencies">
+    <target name="dependencies">
+
+        <!-- (1) default resolution: NO typeFilter. The type=pom aggregator edge must be traversed,
+                 so its transitive jars (lib-a, lib-b, lib-c) end up on the classpath. -->
+        <bt:dependencies filesetId="cpDefault">
+            <pom file="pom.xml"/>
+            <FilesetTarget id="jarsDefault" type=":jar"/>
+            <FilesetTarget id="pomsDefault" type=":pom"/>
+        </bt:dependencies>
+        <pathconvert refid="cpDefault"  property="cp_default"   pathsep="${line.separator}" dirsep="/"/>
+        <echo file="default.classpath.txt" message="${cp_default}"/>
+        <pathconvert refid="pomsDefault" property="poms_default" pathsep="${line.separator}" dirsep="/"/>
+        <echo file="default.poms.txt" message="${poms_default}"/>
+
+        <!-- (2) explicit typeFilter="jar": reproduces the old broken default - the pom edge and its
+                 whole subtree get pruned, so the classpath is empty. -->
+        <bt:dependencies filesetId="cpJarFilter" typeFilter="jar">
+            <pom file="pom.xml"/>
+            <FilesetTarget id="jarsJarFilter" type=":jar"/>
+        </bt:dependencies>
+        <pathconvert refid="cpJarFilter" property="cp_jarfilter" pathsep="${line.separator}" dirsep="/"/>
+        <echo file="jarfilter.classpath.txt" message="${cp_jarfilter}"/>
+
+    </target>
+</project>

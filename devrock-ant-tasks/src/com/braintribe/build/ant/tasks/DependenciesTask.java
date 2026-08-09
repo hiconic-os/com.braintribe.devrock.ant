@@ -190,7 +190,15 @@ public class DependenciesTask extends Task implements HasLoggingConfiguration  {
 	private final ResourceCollectionTargetProcessor targetProcessor = new ResourceCollectionTargetProcessor();
 	
 	private String useScope = "runtime";
-	private String typeFilter = "jar";
+	// No type filter by default. The typeFilter is applied as a *dependency traversal* filter
+	// (DirectMcBridge -> ClasspathResolutionContext.filterDependencies), and for a classpath walk the
+	// set of edges to follow is fixed by Maven's rules (scope/optional/exclusions/transitivity) - it must
+	// not depend on the edge's artifact type. A non-null default (e.g. "jar") silently prunes pom-typed
+	// aggregator/BOM edges together with their whole transitive subtree. Which PARTS end up in the
+	// fileset/classpath is a separate axis, driven by the `type` / FileSetTarget config (default ":jar"),
+	// so leaving traversal unfiltered does not pull .pom files into the result. The filter stays available
+	// as an explicit opt-in for callers that deliberately want to narrow a resolution by type.
+	private String typeFilter = null;
 	private String resolutionId;
 	
 	@Configurable

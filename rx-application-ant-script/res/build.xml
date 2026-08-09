@@ -52,10 +52,13 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<property name="docker.image.push" value="false"/>
 		<property name="docker.image.pull" value="false"/>
 		<property name="docker.image.noCache" value="false"/>
-		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile">
+		<!-- typeFilter="jar,pom": traverse pom-typed (aggregator) dependency edges too. Interim until the
+		     devrock-ant-tasks default (now null / no traversal filter) is rolled out via toolset + docker;
+		     without it the old "jar" default prunes those edges and their whole transitive subtree. -->
+		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile" typeFilter="jar,pom">
 			<pom refid="maven.project"/>
 		</bt:dependencies>
-		<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime" solutionListStringProperty="runtime.solutions">
+		<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime" typeFilter="jar,pom" solutionListStringProperty="runtime.solutions">
 			<pom refid="maven.project"/>
 		</bt:dependencies>
 		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
