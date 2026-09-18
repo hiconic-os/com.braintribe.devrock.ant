@@ -130,7 +130,7 @@ public class BuildApplicationImageTask extends Task {
 
 	protected String dockerfile() {
 		StringBuilder result = new StringBuilder();
-		result.append("ARG BASE_IMAGE\n");
+		result.append("ARG BASE_IMAGE=").append(baseImage).append('\n');
 		result.append("FROM ${BASE_IMAGE}\n\n");
 		for (String entry : split(environment, ";")) {
 			int equals = entry.indexOf('=');
