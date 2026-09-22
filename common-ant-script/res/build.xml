@@ -210,6 +210,94 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<echo message="nothing to compile in this artifact"/>
 	</target>
 
+	<!--
+		Indexed classpath resources.
+
+		An artifact that publishes files as classpath resources declares them in
+		src/META-INF/classpath-resources.txt, one top level file or folder per line.
+
+		This target expands that declaration into META-INF/classpath-index.txt - needed for loading
+		the resources by a ClassLoader.
+
+		An artifact whose src holds nothing besides the declaration and the declared reources is
+		marked as a pure classpath resource artifact with META-INF/classpath-resource-only.
+		
+		In RX the app assembler thus drop the jar once the resources are extracted.
+	-->
+	<target name="detect-classpath-resources">
+		<property name="classpath.resources.declaration" location="${src}/META-INF/classpath-resources.txt"/>
+		<available property="classpath.resources.declared" file="${classpath.resources.declaration}" type="file"/>
+	</target>
+
+	<target name="index-classpath-resources" depends="detect-classpath-resources" if="classpath.resources.declared">
+		<loadfile property="classpath.resources.listing" srcFile="${classpath.resources.declaration}">
+			<filterchain>
+				<striplinecomments><comment value="#"/></striplinecomments>
+				<tokenfilter>
+					<trim/>
+					<ignoreblank/>
+				</tokenfilter>
+			</filterchain>
+		</loadfile>
+		<!-- loadfile leaves the property unset when every line was a comment or blank -->
+		<property name="classpath.resources.listing" value=""/>
+
+		<for list="${classpath.resources.listing}" delimiter="${line.separator}" param="entry" trim="true">
+			<sequential>
+				<fail message="Invalid entry [@{entry}] in ${classpath.resources.declaration}. An entry must be a relative path inside src.">
+					<condition>
+						<matches string="@{entry}" pattern="(^[/\\])|(\.\.)|(^[A-Za-z]:)"/>
+					</condition>
+				</fail>
+				<fail message="Declared classpath resource [@{entry}] does not exist in ${src}. Listed in ${classpath.resources.declaration}.">
+					<condition>
+						<not><available file="${src}/@{entry}"/></not>
+					</condition>
+				</fail>
+			</sequential>
+		</for>
+
+		<!-- Ant appends nothing to a plain name, so every entry contributes both the file
+		     pattern and the folder content pattern. Exactly one of the two ever matches. -->
+		<tempfile property="classpath.resources.patterns" destdir="${java.io.tmpdir}" prefix="classpath-resources-" suffix=".patterns" deleteonexit="true"/>
+		<echo file="${classpath.resources.patterns}">${classpath.resources.listing}${line.separator}</echo>
+		<replaceregexp file="${classpath.resources.patterns}" match="^(.+)$" replace="\1${line.separator}\1/**" byline="true"/>
+
+		<resourcecount property="classpath.resources.java.count">
+			<fileset dir="${src}" includesfile="${classpath.resources.patterns}">
+				<filename name="**/*.java"/>
+			</fileset>
+		</resourcecount>
+		<fail message="A declared classpath resource folder contains Java sources. They would be compiled into the output folder and indexed there, but never packaged. Move them out of the declared entries.">
+			<condition>
+				<not><equals arg1="${classpath.resources.java.count}" arg2="0"/></not>
+			</condition>
+		</fail>
+
+		<fileset id="classpath.resources.fileset" dir="${src}" includesfile="${classpath.resources.patterns}"/>
+		<pathconvert property="classpath.index.entries" refid="classpath.resources.fileset" pathsep="${line.separator}" targetos="unix">
+			<map from="${src}${file.separator}" to=""/>
+		</pathconvert>
+
+		<mkdir dir="${META-INF}"/>
+		<echo file="${META-INF}/classpath-index.txt">${classpath.index.entries}${line.separator}</echo>
+
+		<resourcecount property="classpath.resources.unlisted.count">
+			<fileset dir="${src}" excludesfile="${classpath.resources.patterns}">
+				<exclude name="META-INF/classpath-resources.txt"/>
+			</fileset>
+		</resourcecount>
+		<if>
+			<equals arg1="${classpath.resources.unlisted.count}" arg2="0"/>
+			<then>
+				<echo message="Pure classpath resource artifact. Its jar may be pruned from an assembled image."/>
+				<echo file="${META-INF}/classpath-resource-only">formatVersion=1${line.separator}</echo>
+			</then>
+		</if>
+
+		<delete file="${classpath.resources.patterns}" quiet="true"/>
+	</target>
+
 	<target name="dist-jar-license">
 		<mkdir dir="${META-INF}"/>
 		<if>

@@ -15,7 +15,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 	<bt:import artifact="com.braintribe.devrock.ant:common-ant-script#1.0" useCase="DEVROCK" />
 
-	<target name="compile" depends="init, javadoc, generate-artifact-reflection">
+	<target name="compile" depends="init, javadoc, generate-artifact-reflection, index-classpath-resources">
 		<if>
 			<or>
 				<istrue value="${pom.project.properties.jsinterop}" />

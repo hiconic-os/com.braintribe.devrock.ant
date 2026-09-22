@@ -69,23 +69,23 @@ This opt-out also keeps such terminals buildable by an older SDK while a newly p
 
 ## Pure indexed resource artifacts
 
-The producer build marks an artifact containing only indexed resources with:
+An artifact containing only indexed resources is marked with:
 
 ```text
 META-INF/classpath-resource-only
 ```
 
-The marker currently contains:
+Which currently contains:
 
 ```properties
 formatVersion=1
 ```
 
-It may only be generated after checking that the artifact has no Java classes, service-provider
-declarations, native libraries, or nested archives. The shared classpath-index build target
-`generate-pure-classpath-index` performs this validation. After compilation,
-`mark-pure-classpath-resource` writes the marker into the build output; generated markers never
-enter the source tree.
+It is written by the `index-classpath-resources` target of `common-ant-script`. It writes the marker only when the artifact's `src`
+contains nothing besides `META-INF/classpath-resources.txt` and the entries that file declares. The marker is generated into the build output and never enters the source tree.
+
+See the [classpath resources](../../hiconic-documentation/generic-model/classpath-resources.md) documentation for
+the declaration format and for how the same declaration serves an IDE launch.
 
 `assemble` retains all runtime JARs for a mixed local/IDE environment. `assemble-image` additionally
 removes marked artifacts from `application/lib` after all indexed resources have been materialized
