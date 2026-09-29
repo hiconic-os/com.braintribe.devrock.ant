@@ -65,7 +65,7 @@ public class AssembleClasspathResourcesTaskTest {
 				.contains("\"sha256\"");
 		assertThat(application.resolve("packaged-resources/index.properties")).content()
 				.contains("formatVersion=1")
-				.contains("artifact.0.origin=example-configuration")
+				.contains("artifact.0.artifactId=example-configuration")
 				.contains("artifact.0.resource.0.path=HICONIC-CONF/example.yaml");
 		assertThat(application.resolve("packaged-conf")).doesNotExist();
 		assertThat(application.resolve("local/compose.yaml")).hasContent("services: {}");
@@ -135,6 +135,25 @@ public class AssembleClasspathResourcesTaskTest {
 		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
 
 		taskFor(source, application).execute();
+	}
+
+	@Test
+	public void takesArtifactIdFromArtifactDescriptor() throws Exception {
+		Path root = temporaryFolder.newFolder("descriptor").toPath();
+		Path source = root.resolve("renamed-1.0-pc.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH, "groupId=example\nartifactId=described-configuration\nversion=1.0-pc\n",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: described\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		taskFor(source, application).execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.artifactId=described-configuration");
 	}
 
 	private AssembleClasspathResourcesTask taskFor(Path source, Path application) {

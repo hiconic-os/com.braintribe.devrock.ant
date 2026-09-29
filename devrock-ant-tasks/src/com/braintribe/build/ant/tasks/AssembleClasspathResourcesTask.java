@@ -38,6 +38,7 @@ public class AssembleClasspathResourcesTask extends Task {
 
 	public static final String INDEX_PATH = "META-INF/classpath-index.txt";
 	public static final String RESOURCE_ONLY_MARKER_PATH = "META-INF/classpath-resource-only";
+	public static final String ARTIFACT_DESCRIPTOR_PATH = "META-INF/artifact-descriptor.properties";
 	public static final String MIRROR_FOLDER = "packaged-resources";
 	public static final String FILESYSTEM_INDEX_FILE = "index.properties";
 	public static final String APPLICATION_RESOURCES_PREFIX = "HICONIC-APP-RESOURCES/";
@@ -144,8 +145,13 @@ public class AssembleClasspathResourcesTask extends Task {
 		boolean resourceOnly = Files.isRegularFile(marker);
 		if (resourceOnly)
 			validateResourceOnlyMarker(() -> Files.newInputStream(marker), marker.toString());
-		String origin = terminalArtifactId != null && "build".equals(directory.getName()) ? terminalArtifactId : directory.getName();
-		String folder = uniqueFolder(sanitize(origin), artifactFolders);
+		Path descriptor = directory.toPath().resolve(ARTIFACT_DESCRIPTOR_PATH);
+		String descriptorArtifactId = Files.isRegularFile(descriptor)
+				? readDescriptorArtifactId(() -> Files.newInputStream(descriptor), descriptor.toString())
+				: null;
+		String artifactId = descriptorArtifactId != null ? descriptorArtifactId
+				: terminalArtifactId != null && "build".equals(directory.getName()) ? terminalArtifactId : directory.getName();
+		String folder = uniqueFolder(sanitize(artifactId), artifactFolders);
 		Path artifactRoot = mirrorRoot.resolve(folder);
 		List<String> entries = readIndex(() -> Files.newInputStream(index), index.toString());
 
@@ -155,7 +161,7 @@ public class AssembleClasspathResourcesTask extends Task {
 				throw new BuildException("Indexed classpath resource does not exist in " + directory + ": " + entry);
 			copy(source, safeTarget(artifactRoot, entry));
 		}
-		return new ArtifactMirror(origin, directory.getName(), folder, resourceOnly, false, entries);
+		return new ArtifactMirror(artifactId, directory.getName(), folder, resourceOnly, false, entries);
 	}
 
 	private ArtifactMirror mirrorArchive(File archive, Path mirrorRoot, Set<String> artifactFolders) {
@@ -171,7 +177,10 @@ public class AssembleClasspathResourcesTask extends Task {
 			boolean resourceOnly = marker != null;
 			if (resourceOnly)
 				validateResourceOnlyMarker(() -> zip.getInputStream(marker), archive + "!/" + RESOURCE_ONLY_MARKER_PATH);
-			String origin = inferArtifactId(archive);
+			ZipEntry descriptor = zip.getEntry(ARTIFACT_DESCRIPTOR_PATH);
+			String descriptorArtifactId = descriptor == null ? null
+					: readDescriptorArtifactId(() -> zip.getInputStream(descriptor), archive + "!/" + ARTIFACT_DESCRIPTOR_PATH);
+			String artifactId = descriptorArtifactId != null ? descriptorArtifactId : inferArtifactId(archive);
 			String folder = uniqueFolder(sanitize(stripJarSuffix(archive.getName())), artifactFolders);
 			Path artifactRoot = mirrorRoot.resolve(folder);
 			List<String> entries;
@@ -192,7 +201,7 @@ public class AssembleClasspathResourcesTask extends Task {
 			if (pruned)
 				pruneLibraryArchive(archive);
 
-			return new ArtifactMirror(origin, archive.getName(), folder, resourceOnly, pruned, entries);
+			return new ArtifactMirror(artifactId, archive.getName(), folder, resourceOnly, pruned, entries);
 
 		} catch (ZipException e) {
 			log("Skipping non-archive runtime part " + archive, Project.MSG_VERBOSE);
@@ -236,6 +245,18 @@ public class AssembleClasspathResourcesTask extends Task {
 			throw new BuildException("Cannot read classpath index " + source, e);
 		}
 		return new ArrayList<>(result);
+	}
+
+	/** The artifactId of the artifact descriptor, or null if it names none. An artifact without a descriptor is identified by its file name. */
+	private String readDescriptorArtifactId(InputStreamSupplier input, String source) {
+		Properties properties = new Properties();
+		try (InputStream in = input.open()) {
+			properties.load(in);
+		} catch (IOException e) {
+			throw new BuildException("Cannot read artifact descriptor " + source, e);
+		}
+		String artifactId = properties.getProperty("artifactId");
+		return artifactId == null || artifactId.isBlank() ? null : artifactId.trim();
 	}
 
 	private void validateResourceOnlyMarker(InputStreamSupplier input, String source) {
@@ -283,7 +304,7 @@ public class AssembleClasspathResourcesTask extends Task {
 			ArtifactMirror mirror = mirrors.get(a);
 			String prefix = "artifact." + a + ".";
 			content.append(prefix).append("folder=").append(escapeProperty(mirror.folder)).append('\n');
-			content.append(prefix).append("origin=").append(escapeProperty(mirror.artifactId)).append('\n');
+			content.append(prefix).append("artifactId=").append(escapeProperty(mirror.artifactId)).append('\n');
 			content.append(prefix).append("sourceName=").append(escapeProperty(mirror.sourceName)).append('\n');
 			content.append(prefix).append("resource.count=").append(mirror.entries.size()).append('\n');
 			for (int r = 0; r < mirror.entries.size(); r++)
