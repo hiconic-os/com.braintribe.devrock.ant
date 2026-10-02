@@ -156,6 +156,45 @@ public class AssembleClasspathResourcesTaskTest {
 				.contains("artifact.0.artifactId=described-configuration");
 	}
 
+	@Test
+	public void takesGroupIdFromArtifactDescriptor() throws Exception {
+		Path root = temporaryFolder.newFolder("descriptor-group").toPath();
+		Path source = root.resolve("renamed-1.0-pc.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH, "groupId=example\nartifactId=described-configuration\nversion=1.0-pc\n",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: described\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		taskFor(source, application).execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.groupId=example");
+	}
+
+	/** Without a descriptor the groupId is not known, and the index says nothing rather than something wrong. */
+	@Test
+	public void omitsGroupIdWithoutArtifactDescriptor() throws Exception {
+		Path root = temporaryFolder.newFolder("no-descriptor").toPath();
+		Path source = root.resolve("plain-configuration-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: plain\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		taskFor(source, application).execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.artifactId=")
+				.doesNotContain("groupId");
+	}
+
 	private AssembleClasspathResourcesTask taskFor(Path source, Path application) {
 		Project project = new Project();
 		project.init();

@@ -145,11 +145,12 @@ public class AssembleClasspathResourcesTask extends Task {
 		boolean resourceOnly = Files.isRegularFile(marker);
 		if (resourceOnly)
 			validateResourceOnlyMarker(() -> Files.newInputStream(marker), marker.toString());
-		Path descriptor = directory.toPath().resolve(ARTIFACT_DESCRIPTOR_PATH);
-		String descriptorArtifactId = Files.isRegularFile(descriptor)
-				? readDescriptorArtifactId(() -> Files.newInputStream(descriptor), descriptor.toString())
+		Path descriptorFile = directory.toPath().resolve(ARTIFACT_DESCRIPTOR_PATH);
+		Descriptor descriptor = Files.isRegularFile(descriptorFile)
+				? readDescriptor(() -> Files.newInputStream(descriptorFile), descriptorFile.toString())
 				: null;
-		String artifactId = descriptorArtifactId != null ? descriptorArtifactId
+		String groupId = descriptor != null ? descriptor.groupId : "";
+		String artifactId = descriptor != null ? descriptor.artifactId
 				: terminalArtifactId != null && "build".equals(directory.getName()) ? terminalArtifactId : directory.getName();
 		String folder = uniqueFolder(sanitize(artifactId), artifactFolders);
 		Path artifactRoot = mirrorRoot.resolve(folder);
@@ -161,7 +162,7 @@ public class AssembleClasspathResourcesTask extends Task {
 				throw new BuildException("Indexed classpath resource does not exist in " + directory + ": " + entry);
 			copy(source, safeTarget(artifactRoot, entry));
 		}
-		return new ArtifactMirror(artifactId, directory.getName(), folder, resourceOnly, false, entries);
+		return new ArtifactMirror(groupId, artifactId, directory.getName(), folder, resourceOnly, false, entries);
 	}
 
 	private ArtifactMirror mirrorArchive(File archive, Path mirrorRoot, Set<String> artifactFolders) {
@@ -177,10 +178,11 @@ public class AssembleClasspathResourcesTask extends Task {
 			boolean resourceOnly = marker != null;
 			if (resourceOnly)
 				validateResourceOnlyMarker(() -> zip.getInputStream(marker), archive + "!/" + RESOURCE_ONLY_MARKER_PATH);
-			ZipEntry descriptor = zip.getEntry(ARTIFACT_DESCRIPTOR_PATH);
-			String descriptorArtifactId = descriptor == null ? null
-					: readDescriptorArtifactId(() -> zip.getInputStream(descriptor), archive + "!/" + ARTIFACT_DESCRIPTOR_PATH);
-			String artifactId = descriptorArtifactId != null ? descriptorArtifactId : inferArtifactId(archive);
+			ZipEntry descriptorEntry = zip.getEntry(ARTIFACT_DESCRIPTOR_PATH);
+			Descriptor descriptor = descriptorEntry == null ? null
+					: readDescriptor(() -> zip.getInputStream(descriptorEntry), archive + "!/" + ARTIFACT_DESCRIPTOR_PATH);
+			String groupId = descriptor != null ? descriptor.groupId : "";
+			String artifactId = descriptor != null ? descriptor.artifactId : inferArtifactId(archive);
 			String folder = uniqueFolder(sanitize(stripJarSuffix(archive.getName())), artifactFolders);
 			Path artifactRoot = mirrorRoot.resolve(folder);
 			List<String> entries;
@@ -201,7 +203,7 @@ public class AssembleClasspathResourcesTask extends Task {
 			if (pruned)
 				pruneLibraryArchive(archive);
 
-			return new ArtifactMirror(artifactId, archive.getName(), folder, resourceOnly, pruned, entries);
+			return new ArtifactMirror(groupId, artifactId, archive.getName(), folder, resourceOnly, pruned, entries);
 
 		} catch (ZipException e) {
 			log("Skipping non-archive runtime part " + archive, Project.MSG_VERBOSE);
@@ -247,8 +249,11 @@ public class AssembleClasspathResourcesTask extends Task {
 		return new ArrayList<>(result);
 	}
 
-	/** The artifactId of the artifact descriptor, or null if it names none. An artifact without a descriptor is identified by its file name. */
-	private String readDescriptorArtifactId(InputStreamSupplier input, String source) {
+	/**
+	 * The artifact descriptor, or null if it names no artifactId. An artifact without a descriptor is identified by its file name, and its groupId is
+	 * not known.
+	 */
+	private Descriptor readDescriptor(InputStreamSupplier input, String source) {
 		Properties properties = new Properties();
 		try (InputStream in = input.open()) {
 			properties.load(in);
@@ -256,7 +261,10 @@ public class AssembleClasspathResourcesTask extends Task {
 			throw new BuildException("Cannot read artifact descriptor " + source, e);
 		}
 		String artifactId = properties.getProperty("artifactId");
-		return artifactId == null || artifactId.isBlank() ? null : artifactId.trim();
+		if (artifactId == null || artifactId.isBlank())
+			return null;
+
+		return new Descriptor(properties.getProperty("groupId", "").trim(), artifactId.trim());
 	}
 
 	private void validateResourceOnlyMarker(InputStreamSupplier input, String source) {
@@ -304,6 +312,8 @@ public class AssembleClasspathResourcesTask extends Task {
 			ArtifactMirror mirror = mirrors.get(a);
 			String prefix = "artifact." + a + ".";
 			content.append(prefix).append("folder=").append(escapeProperty(mirror.folder)).append('\n');
+			if (!mirror.groupId.isEmpty())
+				content.append(prefix).append("groupId=").append(escapeProperty(mirror.groupId)).append('\n');
 			content.append(prefix).append("artifactId=").append(escapeProperty(mirror.artifactId)).append('\n');
 			content.append(prefix).append("sourceName=").append(escapeProperty(mirror.sourceName)).append('\n');
 			content.append(prefix).append("resource.count=").append(mirror.entries.size()).append('\n');
@@ -432,7 +442,19 @@ public class AssembleClasspathResourcesTask extends Task {
 		InputStream open() throws IOException;
 	}
 
+	private static class Descriptor {
+		final String groupId;
+		final String artifactId;
+
+		Descriptor(String groupId, String artifactId) {
+			this.groupId = groupId;
+			this.artifactId = artifactId;
+		}
+	}
+
 	private static class ArtifactMirror {
+		/** Empty if the artifact has no descriptor. */
+		final String groupId;
 		final String artifactId;
 		final String sourceName;
 		final String folder;
@@ -440,7 +462,9 @@ public class AssembleClasspathResourcesTask extends Task {
 		final boolean pruned;
 		final List<String> entries;
 
-		ArtifactMirror(String artifactId, String sourceName, String folder, boolean resourceOnly, boolean pruned, List<String> entries) {
+		ArtifactMirror(String groupId, String artifactId, String sourceName, String folder, boolean resourceOnly, boolean pruned,
+				List<String> entries) {
+			this.groupId = groupId;
 			this.artifactId = artifactId;
 			this.sourceName = sourceName;
 			this.folder = folder;
