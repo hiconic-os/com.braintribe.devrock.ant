@@ -58,7 +58,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<bt:dependencies filesetId="compile.fileset" pathId="compile.classpath" useScope="compile" typeFilter="jar,pom">
 			<pom refid="maven.project"/>
 		</bt:dependencies>
-		<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime" typeFilter="jar,pom" solutionListStringProperty="runtime.solutions">
+		<bt:dependencies filesetId="runtime.fileset" pathId="runtime.classpath" useScope="runtime" typeFilter="jar,pom" solutionListStringProperty="runtime.solutions" resolutionId="runtime.resolution">
 			<pom refid="maven.project"/>
 		</bt:dependencies>
 		<property name="versionedName" value="${maven.project.artifactId}-${maven.project.version}"/>
@@ -130,9 +130,12 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<if>
 			<istrue value="${mirror.classpath.resources}"/>
 			<then>
+				<!-- The resolution names the artifact of every jar without artifact descriptor. -->
 				<bt:assembleClasspathResources classpathRefId="application.contributions.classpath"
 					applicationDir="${dist}/application"
+					terminalGroupId="${maven.project.groupId}"
 					terminalArtifactId="${maven.project.artifactId}"
+					resolutionId="runtime.resolution"
 					pruneResourceOnlyArtifacts="${prune.resource.only.artifacts}"/>
 			</then>
 		</if>
