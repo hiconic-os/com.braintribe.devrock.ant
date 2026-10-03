@@ -28,11 +28,21 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 
+import com.braintribe.model.artifact.analysis.AnalysisArtifact;
+import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
+import com.braintribe.model.artifact.consumable.Part;
+import com.braintribe.model.resource.FileResource;
+
 /**
  * Materializes resources referenced by {@code META-INF/classpath-index.txt} in an artifact-scoped filesystem mirror.
  * Resources below {@code HICONIC-APP-RESOURCES/} are additionally projected into the application root, allowing
  * versioned resource artifacts to contribute an application layout without snapshotting their dependency graph.
  * Marked, resource-only artifacts can optionally be removed from the assembled application's library folder.
+ * <p>
+ * The groupId and artifactId of a classpath element come from its {@code META-INF/artifact-descriptor.properties}. An artifact built without
+ * artifact reflection has no descriptor. For such an artifact they come from the dependency resolution named by {@link #setResolutionId(String)},
+ * if one is given, and for the terminal build folder from {@link #setTerminalGroupId(String)} and {@link #setTerminalArtifactId(String)}. Otherwise
+ * the artifactId is derived from the file name and the groupId stays unknown.
  */
 public class AssembleClasspathResourcesTask extends Task {
 
@@ -46,7 +56,12 @@ public class AssembleClasspathResourcesTask extends Task {
 	private String classpathRefId;
 	private File applicationDir;
 	private boolean pruneResourceOnlyArtifacts;
+	private String terminalGroupId;
 	private String terminalArtifactId;
+	private String resolutionId;
+
+	/** The artifacts of the {@link #setResolutionId(String) resolution}, by the file of their parts. */
+	private Map<Path, Descriptor> resolvedArtifactsByFile = Map.of();
 
 	public void setClasspathRefId(String classpathRefId) {
 		this.classpathRefId = classpathRefId;
@@ -64,6 +79,19 @@ public class AssembleClasspathResourcesTask extends Task {
 		this.terminalArtifactId = terminalArtifactId;
 	}
 
+	/** The groupId of the terminal artifact, whose build folder carries no artifact descriptor. Optional. */
+	public void setTerminalGroupId(String terminalGroupId) {
+		this.terminalGroupId = terminalGroupId;
+	}
+
+	/**
+	 * The id of the {@link AnalysisArtifactResolution} that a {@code bt:dependencies} published with its {@code resolutionId}. It names the
+	 * artifact of every classpath element without artifact descriptor. Optional.
+	 */
+	public void setResolutionId(String resolutionId) {
+		this.resolutionId = resolutionId;
+	}
+
 	@Override
 	public void execute() throws BuildException {
 		if (classpathRefId == null)
@@ -74,6 +102,8 @@ public class AssembleClasspathResourcesTask extends Task {
 		Object reference = getProject().getReference(classpathRefId);
 		if (!(reference instanceof org.apache.tools.ant.types.Path))
 			throw new BuildException("Reference '" + classpathRefId + "' is not an Ant Path.");
+
+		resolvedArtifactsByFile = resolvedArtifactsByFile();
 
 		Path mirrorRoot = applicationDir.toPath().resolve(MIRROR_FOLDER);
 		recreateDirectory(mirrorRoot);
@@ -130,6 +160,28 @@ public class AssembleClasspathResourcesTask extends Task {
 		return count;
 	}
 
+	private Map<Path, Descriptor> resolvedArtifactsByFile() {
+		if (resolutionId == null)
+			return Map.of();
+
+		Object reference = getProject().getReference(resolutionId);
+		if (!(reference instanceof AnalysisArtifactResolution))
+			throw new BuildException("Reference '" + resolutionId + "' is not a dependency resolution: " + reference);
+
+		Map<Path, Descriptor> result = new LinkedHashMap<>();
+		for (AnalysisArtifact solution : ((AnalysisArtifactResolution) reference).getSolutions())
+			for (Part part : solution.getParts().values())
+				if (part.getResource() instanceof FileResource fileResource)
+					result.putIfAbsent(normalizedFile(Path.of(fileResource.getPath())),
+							new Descriptor(solution.getGroupId(), solution.getArtifactId()));
+
+		return result;
+	}
+
+	private static Path normalizedFile(Path file) {
+		return file.toAbsolutePath().normalize();
+	}
+
 	private boolean isReservedApplicationPath(Path relativeTarget) {
 		String first = relativeTarget.getName(0).toString();
 		return "lib".equals(first) || MIRROR_FOLDER.equals(first) || "classpath-resources".equals(first)
@@ -149,9 +201,12 @@ public class AssembleClasspathResourcesTask extends Task {
 		Descriptor descriptor = Files.isRegularFile(descriptorFile)
 				? readDescriptor(() -> Files.newInputStream(descriptorFile), descriptorFile.toString())
 				: null;
+		if (descriptor == null)
+			descriptor = resolvedArtifactsByFile.get(normalizedFile(directory.toPath()));
+		if (descriptor == null && terminalArtifactId != null && "build".equals(directory.getName()))
+			descriptor = new Descriptor(terminalGroupId != null ? terminalGroupId : "", terminalArtifactId);
 		String groupId = descriptor != null ? descriptor.groupId : "";
-		String artifactId = descriptor != null ? descriptor.artifactId
-				: terminalArtifactId != null && "build".equals(directory.getName()) ? terminalArtifactId : directory.getName();
+		String artifactId = descriptor != null ? descriptor.artifactId : directory.getName();
 		String folder = uniqueFolder(sanitize(artifactId), artifactFolders);
 		Path artifactRoot = mirrorRoot.resolve(folder);
 		List<String> entries = readIndex(() -> Files.newInputStream(index), index.toString());
@@ -181,6 +236,8 @@ public class AssembleClasspathResourcesTask extends Task {
 			ZipEntry descriptorEntry = zip.getEntry(ARTIFACT_DESCRIPTOR_PATH);
 			Descriptor descriptor = descriptorEntry == null ? null
 					: readDescriptor(() -> zip.getInputStream(descriptorEntry), archive + "!/" + ARTIFACT_DESCRIPTOR_PATH);
+			if (descriptor == null)
+				descriptor = resolvedArtifactsByFile.get(normalizedFile(archive.toPath()));
 			String groupId = descriptor != null ? descriptor.groupId : "";
 			String artifactId = descriptor != null ? descriptor.artifactId : inferArtifactId(archive);
 			String folder = uniqueFolder(sanitize(stripJarSuffix(archive.getName())), artifactFolders);

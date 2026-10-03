@@ -18,6 +18,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.braintribe.build.ant.tasks.AssembleClasspathResourcesTask;
+import com.braintribe.model.artifact.analysis.AnalysisArtifact;
+import com.braintribe.model.artifact.analysis.AnalysisArtifactResolution;
+import com.braintribe.model.artifact.consumable.Part;
+import com.braintribe.model.resource.FileResource;
 
 public class AssembleClasspathResourcesTaskTest {
 
@@ -193,6 +197,111 @@ public class AssembleClasspathResourcesTaskTest {
 		assertThat(application.resolve("packaged-resources/index.properties")).content()
 				.contains("artifact.0.artifactId=")
 				.doesNotContain("groupId");
+	}
+
+	/** An artifact built without artifact reflection has no descriptor, but the dependency resolution knows its coordinates. */
+	@Test
+	public void takesGroupIdAndArtifactIdFromResolutionWithoutArtifactDescriptor() throws Exception {
+		Path root = temporaryFolder.newFolder("resolved").toPath();
+		Path source = root.resolve("flat-name.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml",
+				"HICONIC-CONF/example.yaml", "value: resolved"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.getProject().addReference("test.resolution", resolution(source, "example.group", "resolved-configuration"));
+		task.setResolutionId("test.resolution");
+		task.execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.groupId=example.group")
+				.contains("artifact.0.artifactId=resolved-configuration");
+	}
+
+	/** The descriptor is what the artifact says about itself, so it wins over the resolution. */
+	@Test
+	public void prefersArtifactDescriptorOverResolution() throws Exception {
+		Path root = temporaryFolder.newFolder("described-and-resolved").toPath();
+		Path source = root.resolve("described-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH, "groupId=described.group\nartifactId=described-configuration",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml",
+				"HICONIC-CONF/example.yaml", "value: described"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Files.copy(source, application.resolve("lib").resolve(source.getFileName()));
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.getProject().addReference("test.resolution", resolution(source, "resolved.group", "resolved-configuration"));
+		task.setResolutionId("test.resolution");
+		task.execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.groupId=described.group")
+				.contains("artifact.0.artifactId=described-configuration");
+	}
+
+	/** The build folder of the terminal artifact is not part of its own resolution and carries no descriptor. */
+	@Test
+	public void takesGroupIdOfTerminalBuildFolderFromAttribute() throws Exception {
+		Path root = temporaryFolder.newFolder("terminal").toPath();
+		Path build = root.resolve("build");
+		Files.createDirectories(build.resolve("META-INF"));
+		Files.createDirectories(build.resolve("HICONIC-CONF"));
+		Files.writeString(build.resolve(AssembleClasspathResourcesTask.INDEX_PATH), "HICONIC-CONF/example.yaml", StandardCharsets.UTF_8);
+		Files.writeString(build.resolve("HICONIC-CONF/example.yaml"), "value: terminal", StandardCharsets.UTF_8);
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+
+		AssembleClasspathResourcesTask task = taskFor(build, application);
+		task.setTerminalGroupId("terminal.group");
+		task.setTerminalArtifactId("terminal-app");
+		task.execute();
+
+		assertThat(application.resolve("packaged-resources/index.properties")).content()
+				.contains("artifact.0.groupId=terminal.group")
+				.contains("artifact.0.artifactId=terminal-app");
+	}
+
+	@Test(expected = BuildException.class)
+	public void rejectsResolutionIdThatNamesNoResolution() throws Exception {
+		Path root = temporaryFolder.newFolder("wrong-resolution").toPath();
+		Path source = root.resolve("example-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml",
+				"HICONIC-CONF/example.yaml", "value: example"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.setResolutionId("missing.resolution");
+		task.execute();
+	}
+
+	/** A resolution with one solution, whose jar part is the given file. */
+	private static AnalysisArtifactResolution resolution(Path jar, String groupId, String artifactId) {
+		FileResource resource = FileResource.T.create();
+		resource.setPath(jar.toAbsolutePath().toString());
+
+		Part part = Part.T.create();
+		part.setResource(resource);
+
+		AnalysisArtifact solution = AnalysisArtifact.T.create();
+		solution.setGroupId(groupId);
+		solution.setArtifactId(artifactId);
+		solution.setVersion("1.0");
+		solution.getParts().put("jar", part);
+
+		AnalysisArtifactResolution result = AnalysisArtifactResolution.T.create();
+		result.getSolutions().add(solution);
+		return result;
 	}
 
 	private AssembleClasspathResourcesTask taskFor(Path source, Path application) {
