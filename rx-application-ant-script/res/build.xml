@@ -73,7 +73,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 		<mkdir dir="${build}"/>
 	</target>
 
-	<target name="compile" depends="init">
+	<target name="compile" depends="init, generate-artifact-reflection">
 		<!-- Compile the java code from ${src} into ${build} -->
 		<propertyregex property="pom.project.properties.java.version.normalized" input="${pom.project.properties.java.version}" regexp="(1\.)?(\d+)" select="\2" />
 		<javac debug="true" debuglevel="lines,source,vars" encoding="UTF-8" srcdir="${src}" destdir="${build}"
