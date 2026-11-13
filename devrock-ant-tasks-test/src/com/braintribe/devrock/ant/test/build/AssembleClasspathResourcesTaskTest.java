@@ -30,7 +30,7 @@ public class AssembleClasspathResourcesTaskTest {
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
 	@Test
-	public void mirrorsAndPrunesMarkedResourceArtifact() throws Exception {
+	public void mirrorsAndReducesMarkedResourceArtifact() throws Exception {
 		Path root = temporaryFolder.getRoot().toPath();
 		Path source = root.resolve("example-configuration-1.0.jar");
 		Map<String, String> entries = new LinkedHashMap<>();
@@ -64,9 +64,14 @@ public class AssembleClasspathResourcesTaskTest {
 		assertThat(mirror.resolve("HICONIC-CONF/example.yaml")).hasContent("value: ${still-unresolved}");
 		assertThat(mirror.resolve("HICONIC-RESOURCES/example.txt")).hasContent("packaged resource");
 		assertThat(mirror.resolve("META-INF")).doesNotExist();
-		assertThat(application.resolve("lib").resolve(source.getFileName())).doesNotExist();
+		Path libraryJar = application.resolve("lib").resolve(source.getFileName());
+		assertThat(libraryJar).exists();
+		try (ZipFile zip = new ZipFile(libraryJar.toFile())) {
+			assertThat(zip.getEntry("HICONIC-CONF/example.yaml")).isNull();
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.INDEX_PATH)).isNull();
+		}
 		assertThat(application.resolve("packaged-resources/index.json")).content()
-				.contains("\"disposition\": \"MIRRORED_ONLY\"")
+				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"")
 				.contains("\"sha256\"");
 		assertThat(application.resolve("packaged-resources/index.properties")).content()
 				.contains("formatVersion=1")
@@ -74,6 +79,34 @@ public class AssembleClasspathResourcesTaskTest {
 				.contains("artifact.0.resource.0.path=HICONIC-CONF/example.yaml");
 		assertThat(application.resolve("packaged-conf")).doesNotExist();
 		assertThat(application.resolve("local/compose.yaml")).hasContent("services: {}");
+	}
+
+	@Test
+	public void retainsDescriptorOnlySetupJarAfterMirroring() throws Exception {
+		Path root = temporaryFolder.newFolder("descriptor-only-setup").toPath();
+		Path source = root.resolve("generali-dev-setup-1.0.37.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.RESOURCE_ONLY_MARKER_PATH, "formatVersion=1\n",
+				AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH,
+						"groupId=proventem.claims.generali\nartifactId=generali-dev-setup\nversion=1.0.37\n",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: setup\n"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Path libraryJar = application.resolve("lib").resolve(source.getFileName());
+		Files.copy(source, libraryJar);
+
+		taskFor(source, application).execute();
+
+		assertThat(libraryJar).exists();
+		try (ZipFile zip = new ZipFile(libraryJar.toFile())) {
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH)).isNotNull();
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.INDEX_PATH)).isNull();
+			assertThat(zip.getEntry("HICONIC-CONF/example.yaml")).isNull();
+		}
+		assertThat(application.resolve("packaged-resources/generali-dev-setup-1.0.37/HICONIC-CONF/example.yaml"))
+				.hasContent("value: setup\n");
 	}
 
 	@Test
