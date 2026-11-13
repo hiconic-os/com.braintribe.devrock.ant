@@ -107,6 +107,34 @@ public class AssembleClasspathResourcesTaskTest {
 	}
 
 	@Test
+	public void keepsMarkedResourceArtifactWithGeneratedReflectionClass() throws Exception {
+		Path root = temporaryFolder.newFolder("marked-with-reflection").toPath();
+		Path source = root.resolve("example-configuration-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.RESOURCE_ONLY_MARKER_PATH, "formatVersion=1\n",
+				AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH,
+						"groupId=example\nartifactId=configuration\nversion=1.0\nreflection-class=example.Configuration\n",
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: example\n",
+				"example/Configuration.class", "generated reflection bytecode"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Path libraryJar = application.resolve("lib").resolve(source.getFileName());
+		Files.copy(source, libraryJar);
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.setPruneResourceOnlyArtifacts(true);
+		task.execute();
+
+		assertThat(libraryJar).exists();
+		assertThat(application.resolve("packaged-resources/example-configuration-1.0/HICONIC-CONF/example.yaml"))
+				.hasContent("value: example\n");
+		assertThat(application.resolve("packaged-resources/index.json")).content()
+				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"");
+	}
+
+	@Test
 	public void canonicalizesLegacyWindowsIndexEntries() throws Exception {
 		Path root = temporaryFolder.newFolder("windows-index").toPath();
 		Path source = root.resolve("windows-configuration-1.0.jar");
