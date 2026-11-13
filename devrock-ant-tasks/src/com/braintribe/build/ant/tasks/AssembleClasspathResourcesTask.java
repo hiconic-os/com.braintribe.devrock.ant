@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -17,12 +19,14 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -37,7 +41,9 @@ import com.braintribe.model.resource.FileResource;
  * Materializes resources referenced by {@code META-INF/classpath-index.txt} in an artifact-scoped filesystem mirror.
  * Resources below {@code HICONIC-APP-RESOURCES/} are additionally projected into the application root, allowing
  * versioned resource artifacts to contribute an application layout without snapshotting their dependency graph.
- * Marked, resource-only artifacts can optionally be removed from the assembled application's library folder.
+ * Marked, resource-only artifacts can optionally be removed from the assembled application's library folder. For
+ * archives that remain on the classpath, their indexed resources are removed from the image copy after mirroring.
+ * The source artifact is never modified; signed archives are left intact.
  * <p>
  * The groupId and artifactId of a classpath element come from its {@code META-INF/artifact-descriptor.properties}. An artifact built without
  * artifact reflection has no descriptor. For such an artifact they come from the dependency resolution named by {@link #setResolutionId(String)},
@@ -264,6 +270,8 @@ public class AssembleClasspathResourcesTask extends Task {
 				log("Keeping marked resource artifact with class files in image library: " + archive.getName(), Project.MSG_INFO);
 			if (pruned)
 				pruneLibraryArchive(archive);
+			else if (pruneResourceOnlyArtifacts && !entries.isEmpty())
+				stripMirroredResourcesFromLibraryArchive(zip, archive, entries);
 
 			return new ArtifactMirror(groupId, artifactId, archive.getName(), folder, resourceOnly, pruned, entries);
 
@@ -273,6 +281,70 @@ public class AssembleClasspathResourcesTask extends Task {
 		} catch (IOException e) {
 			throw new BuildException("Cannot inspect runtime artifact " + archive, e);
 		}
+	}
+
+	private void stripMirroredResourcesFromLibraryArchive(ZipFile source, File sourceArchive, List<String> mirroredEntries) {
+		if (source.stream().anyMatch(AssembleClasspathResourcesTask::isSignedJarEntry)) {
+			log("Keeping signed artifact unchanged in image library: " + sourceArchive.getName(), Project.MSG_INFO);
+			return;
+		}
+
+		Path target = applicationDir.toPath().resolve("lib").resolve(sourceArchive.getName());
+		if (!Files.isRegularFile(target))
+			throw new BuildException("Cannot strip mirrored resources because artifact is not present in application/lib: " + target);
+
+		Set<String> omitted = new LinkedHashSet<>(mirroredEntries);
+		omitted.add(INDEX_PATH);
+		omitted.add(RESOURCE_ONLY_MARKER_PATH);
+		Path temporary = null;
+		try {
+			temporary = Files.createTempFile(target.getParent(), sourceArchive.getName(), ".stripped");
+			try (OutputStream fileOut = Files.newOutputStream(temporary); ZipOutputStream output = new ZipOutputStream(fileOut)) {
+				for (ZipEntry entry : source.stream().toList()) {
+					if (omitted.contains(entry.getName()))
+						continue;
+					ZipEntry copy = new ZipEntry(entry.getName());
+					if (entry.getTime() >= 0)
+						copy.setTime(entry.getTime());
+					if (entry.getMethod() == ZipEntry.STORED) {
+						copy.setMethod(ZipEntry.STORED);
+						copy.setSize(entry.getSize());
+						copy.setCrc(entry.getCrc());
+					}
+					output.putNextEntry(copy);
+					if (!entry.isDirectory())
+						try (InputStream input = source.getInputStream(entry)) {
+							input.transferTo(output);
+						}
+					output.closeEntry();
+				}
+			}
+			try {
+				Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+			}
+			log("Removed " + mirroredEntries.size() + " mirrored resource(s) from image library artifact: " + target.getFileName(),
+					Project.MSG_INFO);
+		} catch (IOException e) {
+			throw new BuildException("Cannot strip mirrored resources from image library artifact " + target, e);
+		} finally {
+			if (temporary != null)
+				try {
+					Files.deleteIfExists(temporary);
+				} catch (IOException e) {
+					log("Could not delete temporary stripped archive " + temporary, Project.MSG_WARN);
+				}
+		}
+	}
+
+	private static boolean isSignedJarEntry(ZipEntry entry) {
+		String name = entry.getName().toUpperCase(Locale.ROOT);
+		if (!name.startsWith("META-INF/"))
+			return false;
+		String rest = name.substring("META-INF/".length());
+		return !rest.contains("/") && (rest.endsWith(".SF") || rest.endsWith(".RSA") || rest.endsWith(".DSA") || rest.endsWith(".EC")
+				|| rest.startsWith("SIG-"));
 	}
 
 	private void pruneLibraryArchive(File sourceArchive) {

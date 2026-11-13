@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.tools.ant.BuildException;
@@ -102,6 +103,8 @@ public class AssembleClasspathResourcesTaskTest {
 		task.execute();
 
 		assertThat(application.resolve("lib").resolve(source.getFileName())).exists();
+		assertStrippedJar(application.resolve("lib").resolve(source.getFileName()), "example/Module.class", null);
+		assertOriginalJar(source);
 		assertThat(application.resolve("packaged-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"");
 	}
@@ -128,10 +131,73 @@ public class AssembleClasspathResourcesTaskTest {
 		task.execute();
 
 		assertThat(libraryJar).exists();
+		assertStrippedJar(libraryJar, "example/Configuration.class", AssembleClasspathResourcesTask.ARTIFACT_DESCRIPTOR_PATH);
+		assertOriginalJar(source);
 		assertThat(application.resolve("packaged-resources/example-configuration-1.0/HICONIC-CONF/example.yaml"))
 				.hasContent("value: example\n");
 		assertThat(application.resolve("packaged-resources/index.json")).content()
 				.contains("\"disposition\": \"MIRRORED_AND_CLASSPATH\"");
+	}
+
+	private static void assertStrippedJar(Path jar, String expectedClass, String expectedDescriptor) throws IOException {
+		try (ZipFile zip = new ZipFile(jar.toFile())) {
+			assertThat(zip.getEntry(expectedClass)).isNotNull();
+			if (expectedDescriptor != null)
+				assertThat(zip.getEntry(expectedDescriptor)).isNotNull();
+			assertThat(zip.getEntry("HICONIC-CONF/example.yaml")).isNull();
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.INDEX_PATH)).isNull();
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.RESOURCE_ONLY_MARKER_PATH)).isNull();
+		}
+	}
+
+	private static void assertOriginalJar(Path jar) throws IOException {
+		try (ZipFile zip = new ZipFile(jar.toFile())) {
+			assertThat(zip.getEntry("HICONIC-CONF/example.yaml")).isNotNull();
+			assertThat(zip.getEntry(AssembleClasspathResourcesTask.INDEX_PATH)).isNotNull();
+		}
+	}
+
+	@Test
+	public void leavesSignedArchiveIntact() throws Exception {
+		Path root = temporaryFolder.newFolder("signed").toPath();
+		Path source = root.resolve("signed-module-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: signed\n",
+				"META-INF/SIGNER.SF", "signature metadata",
+				"example/Module.class", "bytecode"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Path libraryJar = application.resolve("lib").resolve(source.getFileName());
+		Files.copy(source, libraryJar);
+
+		taskFor(source, application).execute();
+
+		assertThat(Files.readAllBytes(libraryJar)).isEqualTo(Files.readAllBytes(source));
+		assertThat(application.resolve("packaged-resources/signed-module-1.0/HICONIC-CONF/example.yaml"))
+				.hasContent("value: signed\n");
+	}
+
+	@Test
+	public void keepsCopiedArchiveIntactWhenPruningIsDisabled() throws Exception {
+		Path root = temporaryFolder.newFolder("pruning-disabled").toPath();
+		Path source = root.resolve("module-1.0.jar");
+		writeZip(source, Map.of(
+				AssembleClasspathResourcesTask.INDEX_PATH, "HICONIC-CONF/example.yaml\n",
+				"HICONIC-CONF/example.yaml", "value: unchanged\n",
+				"example/Module.class", "bytecode"));
+
+		Path application = root.resolve("application");
+		Files.createDirectories(application.resolve("lib"));
+		Path libraryJar = application.resolve("lib").resolve(source.getFileName());
+		Files.copy(source, libraryJar);
+
+		AssembleClasspathResourcesTask task = taskFor(source, application);
+		task.setPruneResourceOnlyArtifacts(false);
+		task.execute();
+
+		assertThat(Files.readAllBytes(libraryJar)).isEqualTo(Files.readAllBytes(source));
 	}
 
 	@Test
